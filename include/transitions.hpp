@@ -4,79 +4,76 @@
 
 #pragma once
 
-#include <vector>
-#include <memory>
 #include "EigenInc.h"
+#include "macros.hpp"
 #include "sensor_data.hpp"
+#include <memory>
+#include <vector>
 
 namespace ukf {
 
+class State;
 
-    class State;
+class Sensor;
 
-    class Sensor;
+class SensorData;
 
-    class SensorData;
+/**
+ * Base class to describe the state transition model
+ */
+class StateTransition {
+public:
+  StateTransition() = default;
 
+  virtual ~StateTransition() = default;
 
-    /**
-     * Base class to describe the state transition model
-     */
-    class StateTransition {
-    public:
-        StateTransition() = default;
+  Eigen::MatrixXd transform(const Eigen::MatrixXd &sigmaPoints);
 
-        virtual ~StateTransition() = default;
+private:
+  virtual Eigen::VectorXd f(State &&) = 0;
+};
 
-        Eigen::MatrixXd transform(const Eigen::MatrixXd &sigmaPoints);
+/**
+ * Base class to describe the measurement prediction model based on the
+ */
+class MeasurementPrediction {
+public:
+  // Only accepting the supported data(?)
+  using SensorExtractor =
+      std::function<std::shared_ptr<const Sensor>(SensorData)>;
+  using GammaPoints = Eigen::MatrixXd;
 
-    private:
-        virtual Eigen::VectorXd f(State &&) = 0;
-    };
+  MeasurementPrediction() = default;
 
-    /**
-     * Base class to describe the measurement prediction model based on the
-     */
-    class MeasurementPrediction {
-    public:
-        using SensorExtractor = std::function<std::shared_ptr<const Sensor>(SensorData)>;
-        using GammaPoints = Eigen::MatrixXd;
+  virtual ~MeasurementPrediction() = default;
 
-        MeasurementPrediction() = default;
+  virtual GammaPoints
+  predict(const Eigen::Ref<const Eigen::MatrixXd> &sigmaPoints);
 
-        virtual ~MeasurementPrediction() = default;
+  NO_DISCARD long dimension() const;
 
-        virtual GammaPoints predict(const Eigen::Ref<const Eigen::MatrixXd> &sigmaPoints);
+  NO_DISCARD bool hasNewData() const { return dimension() > 0; }
 
-        long dimension() const;
+  NO_DISCARD Eigen::MatrixXd calculateMeasurement() const;
 
-        bool hasNewData() const { return dimension() > 0; }
+  void updateSensorData(const SensorData &sensorData);
 
-        Eigen::MatrixXd calculateMeasurement() const;
+  NO_DISCARD MeasurementNoise noise() const { return _R; }
 
-        void updateSensorData(const SensorData &sensorData);
+  inline void registerExtractor(SensorExtractor &&extractor) {
+    _sensorExtractors.emplace_back(std::move(extractor));
+  }
 
-        MeasurementNoise noise() const {
-            return _R;
-        }
+private:
+  virtual Eigen::VectorXd h(State &&) = 0;
 
-    protected:
+  inline void addMeasurement(const std::shared_ptr<const Sensor> &sensor) {
+    _availableSensors.emplace_back(sensor);
+  }
 
-        inline void registerExtractor(SensorExtractor &&extractor) {
-            _sensorExtractors.emplace_back(std::move(extractor));
-        }
+  std::vector<SensorExtractor> _sensorExtractors;
+  std::vector<std::shared_ptr<const Sensor>> _availableSensors{};
+  MeasurementNoise _R;
+};
 
-    private:
-        virtual Eigen::VectorXd h(State &&) = 0;
-
-        inline void addMeasurement(const std::shared_ptr<const Sensor> &sensor) {
-            _availableSensors.emplace_back(sensor);
-        }
-
-        std::vector<SensorExtractor> _sensorExtractors;
-        std::vector<std::shared_ptr<const Sensor>> _availableSensors{};
-        MeasurementNoise _R;
-
-    };
-
-}
+} // namespace ukf

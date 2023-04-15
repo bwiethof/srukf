@@ -24,8 +24,6 @@ TEST(UKFParameters, Defaults) {
 
     const auto computed = params.params();
     matches(computed, {});
-
-
 }
 
 TEST(UKFParameters, Simpleupdate) {

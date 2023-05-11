@@ -13,64 +13,70 @@
 #include <unordered_map>
 #include <vector>
 
+
 namespace ukf {
 
-class Noise;
+    class Noise;
 
-class Sensor {
+    class Sensor {
 
-public:
-  explicit Sensor(long dimension) : _dimension(dimension) {}
+    public:
+        explicit Sensor(long dimension) : _dimension(dimension) {}
 
-  virtual ~Sensor() = default;
+        virtual ~Sensor() = default;
 
-  constexpr long dimension() const { return _dimension; };
+        constexpr long dimension() const { return _dimension; };
 
-  virtual Eigen::VectorXd measurement() const = 0;
+        virtual Eigen::VectorXd measurement() const = 0;
 
-  virtual const std::shared_ptr<Noise> noise() const = 0;
+        virtual const std::shared_ptr<Noise> noise() const = 0;
 
-private:
-  long _dimension{};
-};
+    private:
+        long _dimension{};
+    };
 
-class SensorData {
 
-public:
-  using Measurement = Eigen::VectorXd;
+    class SensorData {
 
-  virtual ~SensorData() = default;
+    public:
+        using Measurement = Eigen::VectorXd;
 
-  // currently only supports single instance of sensor type.
-  // Second sensor will be ignored
-  inline void add(const std::shared_ptr<const Sensor> &sensor) {
-    _data.emplace_back(sensor);
-  }
+        virtual ~SensorData() = default;
 
-  template <typename T> NO_DISCARD Measurement measurement() const {
-    const auto sensor = getMeasurement<T>();
-    if (sensor == nullptr) {
-      return {};
-    }
-    return sensor->measurement();
-  }
+        // currently only supports single instance of sensor type.
+        // Second sensor will be ignored
+        inline void add(const std::shared_ptr<const Sensor> &sensor) {
 
-  template <typename T> inline bool hasMeasurement() {
-    return getMeasurement<T>() != nullptr;
-  }
+            _data.emplace_back(sensor);
+        }
 
-private:
-  template <typename T> const T *getMeasurement() const {
+        template<typename T>
+        NO_DISCARD Measurement measurement() const {
+            const auto sensor = getMeasurement<T>();
+            if (sensor == nullptr) {
+                return {};
+            }
+            return sensor->measurement();
+        }
 
-    for (const auto &sensor : _data) {
-      if (const auto value = dynamic_cast<const T *>(sensor.get())) {
-        return value;
-      }
-    }
-    return nullptr;
-  }
+        template<typename T>
+        inline bool hasMeasurement() {
+            return getMeasurement<T>() != nullptr;
+        }
 
-  std::vector<std::shared_ptr<const Sensor>> _data;
-};
+    private:
+        template<typename T>
+        const T *getMeasurement() const {
+
+            for (const auto &sensor: _data) {
+                if (const auto value = dynamic_cast<const T *>(sensor.get())) {
+                    return value;
+                }
+            }
+            return nullptr;
+        }
+
+        std::vector<std::shared_ptr<const Sensor>> _data;
+    };
 
 } // namespace ukf

@@ -7,7 +7,7 @@
 
 #include <memory>
 #include "parameters.hpp"
-#include "EigenInc.h"
+#include "core/util/EigenInc.h"
 
 namespace ukf {
     class State;
@@ -55,6 +55,3 @@ namespace ukf {
 
     };
 }
-
-
-

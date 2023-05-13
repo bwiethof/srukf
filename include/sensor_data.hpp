@@ -6,8 +6,8 @@
 
 //
 
-#include "EigenInc.h"
-#include "macros.hpp"
+#include "core/util/EigenInc.h"
+#include "core/util/macros.hpp"
 #include "noise.hpp"
 #include <memory>
 #include <unordered_map>

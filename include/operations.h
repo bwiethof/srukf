@@ -5,7 +5,7 @@
 
 #include <Eigen/Dense>
 
-#include "EigenInc.h"
+#include "core/util/EigenInc.h"
 #include "parameters.hpp"
 
 

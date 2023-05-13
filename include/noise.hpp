@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "EigenInc.h"
+#include "core/util/EigenInc.h"
 #include "sensor_data.hpp"
 #include <memory>
 #include <vector>
@@ -12,47 +12,47 @@
 // Noise adapter for System and measurement noise necessary -> no injection of
 // px4 in code
 namespace ukf {
-class Noise {
+    class Noise {
 
-public:
-  virtual ~Noise() = default;
+    public:
+        virtual ~Noise() = default;
 
-  virtual Eigen::MatrixXd matrix() = 0;
+        virtual Eigen::MatrixXd matrix() = 0;
 
-  virtual long dimension() = 0; // should either num rows or num cols (Noise is
-                                // a square matrix)
-};
+        virtual long dimension() = 0; // should either num rows or num cols (Noise is
+        // a square matrix)
+    };
 
-class NoiseImpl;
+    class NoiseImpl;
 
-class Sensor;
+    class Sensor;
 
 /* System Noise
  * Holds the current System Noise
  * resulting matrix is ordered by the add calls?
  */
-class SystemNoise {
+    class SystemNoise {
 
-public:
-  SystemNoise();
+    public:
+        SystemNoise();
 
-  Eigen::MatrixXd matrix() const;
+        Eigen::MatrixXd matrix() const;
 
-  void addNoise(const std::shared_ptr<Noise> &noise) const;
+        void addNoise(const std::shared_ptr<Noise> &noise) const;
 
-private:
-  std::shared_ptr<NoiseImpl> _impl;
-};
+    private:
+        std::shared_ptr<NoiseImpl> _impl;
+    };
 
-class MeasurementNoise {
+    class MeasurementNoise {
 
-public:
-  Eigen::MatrixXd matrix() const;
+    public:
+        Eigen::MatrixXd matrix() const;
 
-  void addNoise(const std::shared_ptr<const Sensor> &sensor) const;
+        void addNoise(const std::shared_ptr<const Sensor> &sensor) const;
 
-private:
-  std::shared_ptr<NoiseImpl> _impl;
-};
+    private:
+        std::shared_ptr<NoiseImpl> _impl;
+    };
 
 } // namespace ukf

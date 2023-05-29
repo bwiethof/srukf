@@ -9,6 +9,7 @@
 #include "core/util/EigenInc.h"
 #include "core/util/traits.hpp"
 #include "core/sensor.hpp"
+#include "core/util/lookups.h"
 
 namespace ukf {
 
@@ -18,7 +19,9 @@ namespace ukf {
         static constexpr int Size = S;
         using XprKind = StaticXpr;
     };
+
     namespace detail {
+
 
         template<typename Derived>
         struct StaticSensorBase : public core::detail::SensorBase<Derived> {
@@ -29,17 +32,18 @@ namespace ukf {
             using typename Base::Type;
 
             typename Base::EigenMeasurementType _z(typename Base::Type data) const {
-                return EigenMeasurementType(derived().z(data).data());
+                return typename Base::EigenMeasurementType(derived().z(data).data());
             }
 
-            typename Base::EigenNoiseType _R() const {
-                return EigenNoiseType(derived().R(std::move(derived()._data)).data());
+            typename Base::EigenNoiseType _R(typename Base::Type data) const {
+                using ukf::core::detail::operation::flatten;
+                return typename Base::EigenNoiseType(flatten(derived().R(data)).data()).transpose();
             }
         };
     }
 
-    template<size_t S, typename DataType>
-    struct StaticSensor : public ukf::core::Sensor<StaticSensor<S, DataType>> {
+    template<size_t S, typename DataType, int Major>
+    struct StaticSensor : public ukf::core::Sensor<StaticSensor<S, DataType, Major>> {
         using Base = core::Sensor<StaticSensor>;
         using BaseType = StaticSensor<S, DataType>;
         using typename Base::DataContainerType;
@@ -53,9 +57,9 @@ namespace ukf {
         using Base = ukf::StaticSensor<0, NoOp_t>;
         using Base::Sensor;
 
-        Base::NoiseContainerType R(NoOp_t) const override { return {{}}; }
+        Base::NoiseContainerType R(const NoOp_t &) const override { return {{}}; }
 
-        Base::DataContainerType z(NoOp_t) const override { return {}; }
+        Base::DataContainerType z(const NoOp_t &) const override { return {}; }
     };
 
 }

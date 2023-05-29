@@ -52,9 +52,13 @@ namespace ukf {
 
             virtual ~Sensor() = default;
 
-            virtual DataContainerType z(typename Base::Type data) const = 0;
+            /* TODO: use z/R in public interface
+             *  -> rename z/R to zImpl/RImpl
+             *  -> rename _z/_R to z/R
+             */
+            virtual DataContainerType z(const typename Base::Type &data) const = 0;
 
-            virtual NoiseContainerType R(typename Base::Type data) const = 0;
+            virtual NoiseContainerType R(const typename Base::Type &data) const = 0;
 
             using Base::_z;
             using Base::_R;

@@ -5,6 +5,7 @@
 #pragma once
 
 #include <cstddef>
+#include "EigenInc.h"
 
 namespace ukf {
     namespace core {
@@ -38,7 +39,7 @@ namespace ukf {
         struct StaticSensorBase;
     }
 
-    template<size_t S, typename DataType>
+    template<size_t S, typename DataType, int Major = Eigen::RowMajor>
     struct StaticSensor;
 
 

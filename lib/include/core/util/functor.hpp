@@ -24,7 +24,7 @@ namespace ukf {
                 Eigen::VectorXf m{};
             };
 
-            auto idSelector = [](auto sensor) { return sensor._id; };
+
 
             // Implementations for Functors
             namespace impl {
@@ -61,6 +61,8 @@ namespace ukf {
                     return {{impl::getMeasurement(args)...}};
                 }
             };
+
+
         } // detail
     } // core
 } // ukf

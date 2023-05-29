@@ -11,6 +11,7 @@
 #include "core/util/traits.hpp"
 #include "core/sensor.hpp"
 #include "core/util/statics.h"
+#include "core/util/lookups.h"
 
 namespace ukf {
 
@@ -40,7 +41,11 @@ namespace ukf {
                 }
 
                 typename Base::EigenNoiseType _R() const {
-                    return typename Base::EigenNoiseType(derived().R(std::move(derived()._data)).data());
+                    using ukf::core::detail::operation::flatten;
+                    flatten(derived().R(derived()._data));
+                    return typename Base::EigenNoiseType(
+                            flatten(derived().R(derived()._data)).data()
+                    );
                 }
             };
         } // namespace detail
@@ -54,11 +59,12 @@ namespace ukf {
             using typename Base::DataContainerType;
             using typename Base::NoiseContainerType;
 
-            explicit Sensor(
-                    DataType data,
-                    std::enable_if_t<std::is_trivially_copyable<DataType>::value, bool> = 0,
-                    std::enable_if_t<!std::is_rvalue_reference<DataType>::value, bool> = 0)
-                    : _data(std::move(data)) {}
+            // TODO: chekc if it is possible to enable if rvalue reference
+//            Sensor(DataType &&data, std::size_t id)
+//                    : _data(std::move(data)), _id(id) {}
+//
+            Sensor(DataType data, std::size_t id)
+                    : _data(std::move(data)), _id(id) {}
 
             DataType _data;
             std::size_t _id{};
@@ -69,9 +75,9 @@ namespace ukf {
             using Base = ukf::slam::Sensor<0, NoOp_t>;
             using Base::Sensor;
 
-            Base::NoiseContainerType R(NoOp_t) const override { return {{}}; }
+            Base::NoiseContainerType R(const NoOp_t &) const override { return {{}}; }
 
-            Base::DataContainerType z(NoOp_t) const override { return {}; }
+            Base::DataContainerType z(const NoOp_t &) const override { return {}; }
         };
 
     } // namespace slam

@@ -50,10 +50,11 @@ namespace ukf {
             std::vector<std::size_t> getOrderedIds() {
                 using ukf::core::detail::index::getIndex;
                 using ukf::core::detail::SensorTypeTrait;
+                auto idSelector = [](auto sensor) { return sensor._id; };
 
                 const std::vector<T> sensors = std::get<getIndex<0, SensorTypeTrait, T, Sensors...>()>(_sensors);
                 std::vector<std::size_t> ids(sensors.size());
-                std::transform(sensors.begin(), sensors.end(), ids.begin(), core::detail::idSelector);
+                std::transform(sensors.begin(), sensors.end(), ids.begin(), idSelector);
 
                 return ids;
             }

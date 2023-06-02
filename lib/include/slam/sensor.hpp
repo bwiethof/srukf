@@ -36,16 +36,15 @@ namespace ukf {
                 using typename Base::DataContainerType;
                 using typename Base::NoiseContainerType;
 
-                typename Base::EigenMeasurementType _z() const {
-                    return typename Base::EigenMeasurementType(derived().z(std::move(derived()._data)).data());
+                typename Base::EigenMeasurementType z() const {
+                    return typename Base::EigenMeasurementType(derived().zImpl(std::move(derived()._data)).data());
                 }
 
-                typename Base::EigenNoiseType _R() const {
+                typename Base::EigenNoiseType R() const {
                     using ukf::core::detail::operation::flatten;
-                    flatten(derived().R(derived()._data));
                     return typename Base::EigenNoiseType(
-                            flatten(derived().R(derived()._data)).data()
-                    );
+                            flatten(derived().RImpl(derived()._data)).data()
+                    ).transpose();
                 }
             };
         } // namespace detail
@@ -59,10 +58,6 @@ namespace ukf {
             using typename Base::DataContainerType;
             using typename Base::NoiseContainerType;
 
-            // TODO: chekc if it is possible to enable if rvalue reference
-//            Sensor(DataType &&data, std::size_t id)
-//                    : _data(std::move(data)), _id(id) {}
-//
             Sensor(DataType data, std::size_t id)
                     : _data(std::move(data)), _id(id) {}
 
@@ -75,9 +70,10 @@ namespace ukf {
             using Base = ukf::slam::Sensor<0, NoOp_t>;
             using Base::Sensor;
 
-            Base::NoiseContainerType R(const NoOp_t &) const override { return {{}}; }
+        protected:
+            Base::NoiseContainerType RImpl(const NoOp_t &) const override { return {{}}; }
 
-            Base::DataContainerType z(const NoOp_t &) const override { return {}; }
+            Base::DataContainerType zImpl(const NoOp_t &) const override { return {}; }
         };
 
     } // namespace slam

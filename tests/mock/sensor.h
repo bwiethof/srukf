@@ -39,18 +39,19 @@ namespace ukf::test::mock {
 
 
     class BaseSensor : public ukf::StaticSensor<4, Data> {
-    public:
-        [[nodiscard]] DataContainerType z(const Data &data) const override;
+    private:
+        [[nodiscard]] DataContainerType zImpl(const Data &data) const override;
 
-        [[nodiscard]] NoiseContainerType R(const Base::Type &data) const override;
+        [[nodiscard]] NoiseContainerType RImpl(const Base::Type &data) const override;
     };
 
     class SlamSensor : public ukf::slam::Sensor<4, Data> {
     public:
         using ukf::slam::Sensor<4, Data>::Sensor;
 
-        [[nodiscard]] DataContainerType z(const Type &data) const override;
+    private:
+        [[nodiscard]] DataContainerType zImpl(const Type &data) const override;
 
-        [[nodiscard]] NoiseContainerType R(const Type &data) const override;
+        [[nodiscard]] NoiseContainerType RImpl(const Type &data) const override;
     };
 } // ukf::test::mock

@@ -52,17 +52,16 @@ namespace ukf {
 
             virtual ~Sensor() = default;
 
-            /* TODO: use z/R in public interface
-             *  -> rename z/R to zImpl/RImpl
-             *  -> rename _z/_R to z/R
-             */
-            virtual DataContainerType z(const typename Base::Type &data) const = 0;
+            using Base::z;
+            using Base::R;
 
-            virtual NoiseContainerType R(const typename Base::Type &data) const = 0;
+        private:
+            virtual DataContainerType zImpl(const typename Base::Type &data) const = 0;
 
-            using Base::_z;
-            using Base::_R;
+            virtual NoiseContainerType RImpl(const typename Base::Type &data) const = 0;
 
+            // User of the implementation
+            friend typename Base::Base;
         };
     }
 

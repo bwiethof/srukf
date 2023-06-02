@@ -31,8 +31,8 @@ namespace ukf::basetest {
                 data.noising.c[0], data.noising.c[1], data.noising.c[2], data.noising.c[3],
                 data.noising.d[0], data.noising.d[1], data.noising.d[2], data.noising.d[3];
 
-        EXPECT_EQ(sensor._z(data), expectedMeasurement);
-        EXPECT_EQ(sensor._R(data), expectedNoising);
+        EXPECT_EQ(sensor.z(data), expectedMeasurement);
+        EXPECT_EQ(sensor.R(data), expectedNoising);
     };
 
     INSTANTIATE_TEST_SUITE_P(BaseSensor, BaseSensorFixture, testing::ValuesIn(ukf::test::mock::values));
@@ -45,8 +45,8 @@ namespace ukf::basetest {
         const Eigen::Vector<float, 0> expectedMeasurement;
         const Eigen::DiagonalMatrix<float, 0> expectedNoising;
 
-        EXPECT_EQ(s._z({}), expectedMeasurement);
-        EXPECT_EQ(s._R({}), expectedNoising.toDenseMatrix());
+        EXPECT_EQ(s.z({}), expectedMeasurement);
+        EXPECT_EQ(s.R({}), expectedNoising.toDenseMatrix());
     }
 
 }

@@ -36,13 +36,13 @@ namespace ukf {
             auto s = std::get<getIndex<0, MeasurementTypeTrait, T, Sensors...>()>(_sensors);
 
             if (offset < _measurement.rows()) {
-                _measurement.segment(offset, s.Size) = s._z(data);
+                _measurement.segment(offset, s.Size) = s.z(data);
                 return;
             }
 
             const auto previousSize = _measurement.size();
             _measurement.resize(previousSize + s.Size);
-            _measurement.segment(previousSize, s.Size) = s._z(data);
+            _measurement.segment(previousSize, s.Size) = s.z(data);
             offset = previousSize;
         }
 

@@ -21,8 +21,8 @@ namespace ukf::test::slam {
                 data.noising.d[0], data.noising.d[1], data.noising.d[2], data.noising.d[3];
 
         ukf::test::mock::SlamSensor sensor(data, 0);
-        EXPECT_EQ(sensor._z(), expectedMeasurement);
-        EXPECT_EQ(sensor._R(), expectedNoising);
+        EXPECT_EQ(sensor.z(), expectedMeasurement);
+        EXPECT_EQ(sensor.R(), expectedNoising);
     };
 
 
@@ -36,7 +36,7 @@ namespace ukf::test::slam {
         const Eigen::Vector<float, 0> expectedMeasurement;
         const Eigen::DiagonalMatrix<float, 0> expectedNoising;
 
-        EXPECT_EQ(s._z({}), expectedMeasurement);
-        EXPECT_EQ(s._R({}), expectedNoising.toDenseMatrix());
+        EXPECT_EQ(s.z({}), expectedMeasurement);
+        EXPECT_EQ(s.R({}), expectedNoising.toDenseMatrix());
     }
 }

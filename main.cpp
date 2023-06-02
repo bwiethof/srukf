@@ -25,11 +25,12 @@ using TestSlamSensorData2 = ukf::slam::Sensor<4, sensor_accel_t>;
 struct CRTPSlamImpl : public ukf::slam::Sensor<4, sensor_accel_s> {
     using BaseType::Sensor;
 
-    std::array<float, 4UL> z(const sensor_accel_s &data) const override {
+protected:
+    std::array<float, 4UL> zImpl(const sensor_accel_s &data) const override {
         return {data.x, data.y, data.z, data.temperature};
     }
 
-    std::array<std::array<float, 4UL>, 4UL> R(const sensor_accel_s &) const override {
+    std::array<std::array<float, 4UL>, 4UL> RImpl(const sensor_accel_s &) const override {
         return {{}};
     }
 
@@ -45,11 +46,14 @@ int main() {
     SlamSensorData slamD;
 
     sensor_accel_s data3{0.1f, 0.2f, 0.3f, 0.4f};
-    ukf::NoOp_t noOp;
+//    ukf::NoOp_t noOp;
 
 
-    slamD.setMeasurement(data3, 3);
-    slamD.setMeasurement(noOp, 2);
-    slamD.constructMeasurement();
-    slamD.getOrderedIds<CRTPSlamImpl>();
+    CRTPSlamImpl sensor(data3, 1);
+    sensor.R();
+
+
+//    slamD.setMeasurement(data3, 3);
+//    slamD.setMeasurement(noOp, 2);
+//    slamD.getOrderedIds<CRTPSlamImpl>();
 }

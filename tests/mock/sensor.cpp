@@ -6,11 +6,11 @@
 
 namespace ukf::test::mock {
 
-    std::array<float, 4> BaseSensor::z(const ukf::test::mock::Data &data) const {
+    std::array<float, 4> BaseSensor::zImpl(const ukf::test::mock::Data &data) const {
         return {data.measure.a, data.measure.b, data.measure.c, data.measure.d};
     }
 
-    std::array<std::array<float, 4>, 4> BaseSensor::R(const Data &data) const {
+    std::array<std::array<float, 4>, 4> BaseSensor::RImpl(const Data &data) const {
         using ukf::core::to_array;
         return {{
                         to_array<4>(data.noising.a),
@@ -20,11 +20,11 @@ namespace ukf::test::mock {
                 }};
     }
 
-    std::array<float, 4> SlamSensor::z(const Data &data) const {
+    std::array<float, 4> SlamSensor::zImpl(const Data &data) const {
         return {data.measure.a, data.measure.b, data.measure.c, data.measure.d};
     }
 
-    std::array<std::array<float, 4>, 4> SlamSensor::R(const Data &data) const {
+    std::array<std::array<float, 4>, 4> SlamSensor::RImpl(const Data &data) const {
         using ukf::core::to_array;
         return {{
                         to_array<4>(data.noising.a),

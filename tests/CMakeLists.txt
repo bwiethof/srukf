@@ -14,7 +14,8 @@ add_executable(SRUKF_Test parametersTest.cpp
         base/sensor_test.cpp
         base/sensor_data_test.cpp
         slam/sensor_test.cpp
-        slam/sensor_data_test.cppmock/sensor.cpp
+        slam/sensor_data_test.cpp
+        mock/sensor.cpp
         mock/sensor.h)
 
 target_compile_features(SRUKF_Test PRIVATE cxx_std_20)

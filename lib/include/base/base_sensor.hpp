@@ -31,13 +31,13 @@ namespace ukf {
             using Base::Size;
             using typename Base::Type;
 
-            typename Base::EigenMeasurementType _z(typename Base::Type data) const {
-                return typename Base::EigenMeasurementType(derived().z(data).data());
+            typename Base::EigenMeasurementType z(typename Base::Type data) const {
+                return typename Base::EigenMeasurementType(derived().zImpl(data).data());
             }
 
-            typename Base::EigenNoiseType _R(typename Base::Type data) const {
+            typename Base::EigenNoiseType R(typename Base::Type data) const {
                 using ukf::core::detail::operation::flatten;
-                return typename Base::EigenNoiseType(flatten(derived().R(data)).data()).transpose();
+                return typename Base::EigenNoiseType(flatten(derived().RImpl(data)).data()).transpose();
             }
         };
     }
@@ -57,9 +57,9 @@ namespace ukf {
         using Base = ukf::StaticSensor<0, NoOp_t>;
         using Base::Sensor;
 
-        Base::NoiseContainerType R(const NoOp_t &) const override { return {{}}; }
+        Base::NoiseContainerType RImpl(const NoOp_t &) const override { return {{}}; }
 
-        Base::DataContainerType z(const NoOp_t &) const override { return {}; }
+        Base::DataContainerType zImpl(const NoOp_t &) const override { return {}; }
     };
 
 }

@@ -67,3 +67,4 @@
 /.idea/modules.xml
 /.idea/.gitignore
 /cmake-build-debug-coverage/
+/coverage/

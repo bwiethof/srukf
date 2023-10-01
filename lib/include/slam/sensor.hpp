@@ -4,77 +4,23 @@
 
 #pragma once
 
-
-#include <cstddef>
 #include <type_traits>
 #include <algorithm>
-#include "core/util/traits.hpp"
+#include "core/detail/traits.hpp"
 #include "core/sensor.hpp"
-#include "core/util/statics.h"
-#include "core/util/lookups.h"
 
 namespace ukf {
-
-    template<size_t S, typename DataType>
-    struct core::detail::traits<ukf::slam::Sensor<S, DataType>> {
-        using Type = DataType;
-        static constexpr int Size = S;
-        using XprKind = SlamXpr;
-    };
-
     namespace slam {
+        template<std::size_t N, typename Data, typename Self, typename ...Inputs>
+        struct SensorModel : public ukf::slam::Model<N, Data, Self, Inputs...> {
+            virtual ~SensorModel() = default;
 
-        namespace detail {
+            // timeUpdate in Sensor only uses current State. Therefore, dt is not needed
+            virtual Eigen::Vector<float, N> mapUpdate(float, const Self &self, const Inputs &...input) const final {
+                return predict(self, input...);
+            }
 
-            template<typename Derived>
-            struct SlamSensorBase : public core::detail::SensorBase<Derived> {
-                using Base = core::detail::SensorBase<Derived>;
-                using Base::derived;
-
-                using Base::Size;
-                using typename Base::Type;
-                using typename Base::DataContainerType;
-                using typename Base::NoiseContainerType;
-
-                typename Base::EigenMeasurementType z() const {
-                    return typename Base::EigenMeasurementType(derived().zImpl(std::move(derived()._data)).data());
-                }
-
-                typename Base::EigenNoiseType R() const {
-                    using ukf::core::detail::operation::flatten;
-                    return typename Base::EigenNoiseType(
-                            flatten(derived().RImpl(derived()._data)).data()
-                    ).transpose();
-                }
-            };
-        } // namespace detail
-
-        template<size_t S, typename DataType>
-        struct Sensor : public ukf::core::Sensor<ukf::slam::Sensor<S, DataType>> {
-            using Base = ukf::core::Sensor<ukf::slam::Sensor<S, DataType>>;
-            using BaseType = Sensor<S, DataType>;
-            using Base::Size;
-            using Type = typename Base::Type;
-            using typename Base::DataContainerType;
-            using typename Base::NoiseContainerType;
-
-            Sensor(DataType data, std::size_t id)
-                    : _data(std::move(data)), _id(id) {}
-
-            DataType _data;
-            std::size_t _id{};
+            virtual Eigen::Vector<float, N> predict(const Self &, const Inputs &...inputs) const = 0;
         };
-
-        struct NoOpSensor : public ukf::slam::Sensor<0, ukf::NoOp_t> {
-
-            using Base = ukf::slam::Sensor<0, NoOp_t>;
-            using Base::Sensor;
-
-        protected:
-            Base::NoiseContainerType RImpl(const NoOp_t &) const override { return {{}}; }
-
-            Base::DataContainerType zImpl(const NoOp_t &) const override { return {}; }
-        };
-
     } // namespace slam
 } // namespace ukf

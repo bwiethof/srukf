@@ -1,18 +1,23 @@
-project(srukf_runner)
 cmake_minimum_required(VERSION 3.16)
 
-set(CMAKE_CXX_STANDARD 14)
+project(srukf VERSION 0.0.1)
+cmake_policy(SET CMP0048 NEW)
+cmake_policy(SET CMP0135 NEW)
 
-add_executable(UKF_runner main.cpp)
 
-include_directories(lib)
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
 add_subdirectory(lib)
 
-target_link_libraries(UKF_runner srukf)
-target_compile_options(UKF_runner PRIVATE -Wall -Wextra -Wpedantic -Werror)
+set(BUILD_RUNNER true)
 
+if (BUILD_RUNNER)
+    add_subdirectory(runner)
+endif ()
 
 include(CTest)
 if (BUILD_TESTING)
     add_subdirectory(tests)
 endif ()
+
+

@@ -8,73 +8,97 @@
 #include <numeric>
 #include <unordered_map>
 #include <Eigen/Core>
-#include "core/util/lookups.h"
-#include "core/util/traits.hpp"
-#include "core/util/functor.hpp"
+#include <iostream>
+#include "core/detail/transform.hpp"
+#include "core/detail/traits.hpp"
+#include "core/detail/functor.hpp"
+#include "core/sensor_data.h"
 
 
 namespace ukf {
     namespace slam {
 
-        template<typename ...Sensors>
-        class SensorData {
+
+        template<typename SingleFields, typename MultiFields>
+        class SensorData;
+
+        template<typename ...SingleFields, typename ...MultiFields>
+        class SensorData<ukf::core::StaticFields<SingleFields...>, ukf::slam::MapFields<MultiFields...>>
+                : public ukf::core::SensorData<ukf::core::StaticFields<SingleFields...>> {
+
+            using Base = ukf::core::SensorData<ukf::core::StaticFields<SingleFields...>>;
 
         public:
+            using Base::operator=;
 
-            template<typename T>
-            void setMeasurement(T &&data, std::size_t id) {
-                using ukf::core::detail::index::getIndex;
-                using ukf::core::detail::MeasurementTypeTrait;
-
-                // should be vector<...>
-                auto &sensors = std::get<getIndex<0, MeasurementTypeTrait, T, Sensors...>()>(_sensors);
-                sensors.emplace_back(std::forward<T>(data), id);
+            template<typename State>
+            Eigen::VectorXf h(const State &X) const {
+                // how to make dt optional? It is not used on these fields
+                // How to check for the correct provided fields
+                return _multiFields.apply(X, -1);
             }
 
-            void constructMeasurement() {
-                using core::detail::operation::transform;
-                const auto seq = std::make_index_sequence<sizeof...(Sensors)>();
-                const auto size = transform(_sensors, seq, core::detail::MeasurementSizeFunctor{});
+            template<typename Field, typename FieldData>
+            void addMeasurement(FieldData &&data, std::size_t id) {
 
-                _measurement.resize(size);
-                const auto measurements = transform(_sensors, seq, core::detail::MeasurementFunctor{});
-                std::accumulate(measurements.begin(), measurements.end(), 0, [&](int offset, const auto &m) {
-                    const auto sizeM = m.size();
-                    _measurement.segment(offset, sizeM) = m;
-                    return offset + sizeM;
-                });
+                const auto offset = append<Field>(std::forward<FieldData>(data));
 
+                _multiFields.template add<Field>(offset, id);
             }
 
-            template<typename T>
-            std::vector<std::size_t> getOrderedIds() {
-                using ukf::core::detail::index::getIndex;
-                using ukf::core::detail::SensorTypeTrait;
-                auto idSelector = [](auto sensor) { return sensor._id; };
 
-                const std::vector<T> sensors = std::get<getIndex<0, SensorTypeTrait, T, Sensors...>()>(_sensors);
-                std::vector<std::size_t> ids(sensors.size());
-                std::transform(sensors.begin(), sensors.end(), ids.begin(), idSelector);
+            Eigen::MatrixXf noising() const override {
+                const auto baseNoising = Base::noising();
+                const long baseNoisingSize = baseNoising.rows();
+                const long size = _noising.rows();
 
-                return ids;
+                const auto fullSize = baseNoisingSize + size;
+                Eigen::MatrixXf noising = Eigen::MatrixXf::Zero(fullSize, fullSize);
+                noising.block(0, 0, baseNoisingSize, baseNoisingSize) = baseNoising;
+                noising.block(baseNoisingSize, baseNoisingSize, size, size) = _noising;
+                return noising;
             }
 
-            Eigen::MatrixXf calculateNoising() {
-                using core::detail::operation::transform;
-                const auto seq = std::make_index_sequence<sizeof...(Sensors)>();
-                const auto size = transform(_sensors, seq, core::detail::MeasurementSizeFunctor{});
-
-
-                Eigen::MatrixXf R = Eigen::MatrixXf::Zero(size, size);
-                return R;
+            std::size_t size() const override {
+                return Base::size() + _measurement.size();
             }
+
+
+            virtual Eigen::VectorXf vector() const override {
+                const Eigen::VectorXf baseMeasurement = Base::vector();
+                Eigen::VectorXf measurement(baseMeasurement.rows() + _measurement.rows());
+                measurement.segment(0, baseMeasurement.rows()) = baseMeasurement;
+                measurement.segment(baseMeasurement.rows(), _measurement.rows()) = _measurement;
+
+                return measurement;
+            }
+
 
         private:
-            std::tuple<std::vector<Sensors>...>
-                    _sensors;
+
+            template<typename Field, typename Data>
+            void set(Data &&data, std::size_t offset) {
+                _noising.block<Field::Size, Field::Size>(offset, offset) = Field::model.noising(/*data*/);
+                _measurement.segment<Field::Size>(offset) = Field::model.toState(
+                        std::forward<Data>(data));
+            }
+
+            template<typename Field, typename Data>
+            std::size_t append(Data &&data) {
+                const auto offset = _measurement.size();
+                const auto newSize = offset + Field::Size;
+                _noising.conservativeResize(newSize, newSize);
+                _measurement.conservativeResize(newSize);
+
+                set<Field>(std::forward<Data>(data), offset);
+                return offset;
+            }
 
             Eigen::VectorXf _measurement{};
+            Eigen::MatrixXf _noising{};
+
+            ukf::slam::MapFields<MultiFields...> _multiFields{};
         };
 
-    } // detail
+    } // slam
 } // ukf

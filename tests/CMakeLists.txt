@@ -6,7 +6,8 @@ set(CMAKE_CXX_STANDARD 14)
 find_package(GTest)
 
 set(SOURCE_FILES core/parameters_test.cpp
-        math/transformation_test.cpp)
+        math/transformation_test.cpp
+        detail/functor_test.cpp)
 
 add_executable(SRUKF_Test ${SOURCE_FILES})
 

@@ -29,7 +29,7 @@ TEST(UkfParameters, Simpleupdate) {
 
     const auto computed = params.params();
 
-    matches(computed, {.W0_s=1.0 / 9, .W0_c = 1.0 / 9 + 1, .Wi=0.0, .gamma = 3.0});
+    matches(computed, {.W0_s=1.0 / 9, .W0_c = 1.0 / 9 + 1, .Wi=1.0 / (2 * (1 + 8)), .gamma = 3.0});
 
 
 }

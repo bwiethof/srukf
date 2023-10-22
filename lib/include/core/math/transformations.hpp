@@ -23,7 +23,7 @@ namespace ukf {
             drawSigmaPoints(const Eigen::MatrixBase<Derived_X> &X, const Eigen::MatrixBase<Derived_P> &P,
                             const ukf::core::UkfParameters &parameters) {
 
-                assert(X.size() == P.cols());
+                assert(X.rows() == P.rows());
 
                 const auto L = X.size(); // missing sensor data for augmented
 

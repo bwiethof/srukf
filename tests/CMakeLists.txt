@@ -7,8 +7,8 @@ find_package(GTest)
 
 set(SOURCE_FILES core/parameters_test.cpp
         math/transformation_test.cpp
-        detail/functor_test.cpp
-        detail/transform_test.cpp
+        core/detail/functor_test.cpp
+        core/detail/transform_test.cpp
 )
 
 add_executable(SRUKF_Test ${SOURCE_FILES})

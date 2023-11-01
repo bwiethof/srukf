@@ -22,55 +22,95 @@ public:
 };
 
 
-struct DataType {};
-
 struct MockModel : public ukf::core::Model<3> {
 
-    MOCK_METHOD((Eigen::Matrix<float, 3, 3>), noising, (), (const));
-    MOCK_METHOD((Eigen::Vector<float, 3>), timeUpdate, (float), (const));
+    Eigen::Matrix<float, 3UL, 3UL> noising() const override {
+        return Eigen::Matrix3f::Identity();
+    }
+
+    Eigen::Vector<float, 3UL> timeUpdate(float) const override {
+        return Eigen::Vector3f{1, 2, 3};
+    }
+
 };
+
 
 
 // TODO: remove FieldSize  by using MockModel Size
 using MockField1 = ukf::core::Field<3, MockModel>;
+
+struct DataType {};
+
+struct MockSensorModel : public ukf::core::SensorModel<2, DataType, MockField1> {
+
+    Eigen::Matrix<float, 2UL, 2UL> noising() const override {
+        return Eigen::Matrix2f::Identity();
+    }
+
+    Eigen::Vector<float, 2UL> toVector(DataType &&) const override {
+        return {3, 3};
+    }
+
+    Eigen::Vector<float, 2UL> predict(const MockField1 &field) const override {
+        return {field.data[0] + field.data[1], field.data[2]};
+    }
+};
+
+using MockSensor = ukf::core::Field<2, MockSensorModel>;
 
 
 // Test prediction part of Ukf.timeStep method
 TEST(UkfTest, TimeStep) {
     // Arrange
     // Create an instance of your class
-    ukf::core::UkfParameters parameters({0, 0, 0});
-    UKFMock myUkf(ukf::core::UkfParameters({0, 0, 0}));
+
+    using StateFieldsType = ukf::core::StateFields<MockField1>;
+    using StateType = ukf::core::State<StateFieldsType>;
+    using CovarianceType = ukf::core::Covariance<StateFieldsType>;
+
+
+    UKFMock myUkf(ukf::core::UkfParameters({1, 0, 0}));
 
     const Eigen::MatrixXf systemNoising = Eigen::MatrixXf::Identity(3, 3);
     EXPECT_CALL(myUkf, getSystemNoise()).Times(AtLeast(1))
                                         .WillRepeatedly(Return(systemNoising));
 
-    // Initialize the parameters
-    ukf::core::State<ukf::core::StateFields<MockField1>> X(
-            Eigen::Vector3f(1, 2, 3)); // Where 3 is the number of rows and columns of your matrix
-    EXPECT_CALL(X.field<MockField1>()
-                 .model, timeUpdate(1.0)).Times(AtLeast(1))
-                                         .WillRepeatedly(Return(Eigen::Vector3f(1, 2, 3)));
+    const CovarianceType P(Eigen::MatrixXf::Identity(3, 3));
+    const StateType X(Eigen::Vector3f(1, 2, 3));
 
+    {
+        const double dt = 1.0;
+        const ukf::core::SensorData<ukf::core::StaticFields<>> sensorData;
 
-    EXPECT_CALL(X.field<MockField1>()
-                 .model, noising()).Times(AtLeast(1))
-                                   .WillRepeatedly(Return(Eigen::Matrix3f::Identity()));
+        // Act
+        const auto [resultState, resultCovariance] = myUkf.timeStep(X, P, dt, sensorData);
 
-    ukf::core::Covariance<ukf::core::StateFields<MockField1>> P(Eigen::MatrixXf::Identity(3, 3));
-    double dt = 1.0;
-    ukf::core::SensorData<ukf::core::StaticFields<>> sensorData; // You need to define your SensorData
+        // only system noise shall be applied
+        const Eigen::Matrix3f expectedCovariance = Eigen::Matrix3f::Identity();
+        const Eigen::Vector3f expectedState = Eigen::Vector3f{1, 2, 3};
 
-    // Act
-    auto result = myUkf.timeStep(X, P, dt, sensorData);
+        ASSERT_TRUE(resultCovariance.isApprox(expectedCovariance));
+        ASSERT_TRUE(resultState.isApprox(expectedState));
+    }
 
-    // Assert
-    // Write your assertions here to test whether the returned result is as we expected
-    // You may need to use Google Test's floating point comparison ASSERT_FLOAT_EQ(a, b) for results as these results are calculated using floating point arithmetic
-    // As an example:
-    // The following assertion is just an example and might not make sense with your calculations.
-    // Adjust your assertions according to your needs.
-    ASSERT_FLOAT_EQ(result.first(0, 0), X(0, 0));
-    ASSERT_FLOAT_EQ(result.second(0, 0), P(0, 0));
+    {
+        const double dt = 1.0;
+
+        ukf::core::SensorData<ukf::core::StaticFields<MockSensor>> sensorData;
+        sensorData.setMeasurement<MockSensor>(DataType{});
+
+        Eigen::Matrix3f expectedCovariance;
+        expectedCovariance << 0.8164966, 0, 0,
+                -0.408248276, 0.707106769, 0,
+                0, 0, 0.707106888;
+
+        const Eigen::Vector3f expectedState = Eigen::Vector3f{1, 2, 3};
+
+        const auto [resultState, resultCovariance] = myUkf.timeStep(X, P, dt, sensorData);
+        std::cout << resultState << "\n" << resultCovariance << "\n";
+
+        ASSERT_TRUE(resultCovariance.isApprox(expectedCovariance));
+        ASSERT_TRUE(resultState.isApprox(expectedState));
+    }
+
 }

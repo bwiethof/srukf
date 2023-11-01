@@ -30,7 +30,7 @@ namespace ukf {
 
             explicit UkfParameters(const ScalingParameters &scalingParams) : _scalingParams(scalingParams) {}
 
-            explicit UkfParameters(ScalingParameters &&scalingParams) : _scalingParams(std::move(scalingParams)) {}
+            explicit UkfParameters(ScalingParameters &&scalingParams) : _scalingParams(scalingParams) {}
 
             void update(std::size_t L) {
                 const auto lambda = calculateLambda(L);

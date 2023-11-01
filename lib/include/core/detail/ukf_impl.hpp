@@ -15,15 +15,22 @@ namespace ukf {
     namespace core {
         namespace detail {
 
+
+            template<typename State, typename P>
+            std::ostream &operator<<(std::ostream &os, const std::pair<State, P> &s) {
+                os << "state:\n" << s.first << "\n" << "covariance:\n" << s.second << "\n";
+                return os;
+            }
+
             // Maybe with inheritance -> SLAM is extension of UKF -> consistent with other stuff + map management can be mor local injected
             class Ukf {
             public:
 
                 virtual ~Ukf() = default;
 
-                explicit Ukf(UkfParameters &&parameters) : _parameters(std::move(parameters)) {}
+                explicit Ukf(UkfParameters &&parameters) : _parameters(parameters) {}
 
-                explicit Ukf(UkfParameters::ScalingParameters &&params) : _parameters(std::move(params)) {}
+                explicit Ukf(UkfParameters::ScalingParameters &&params) : _parameters(params) {}
 
                 Ukf() : _parameters({1e-3, 2, 0}) {}
 
@@ -44,8 +51,10 @@ namespace ukf {
                     Covariance &P_new = newState.second;
                     _parameters.update(X.rows());
                     newState = predict(X, P, dt);
-                    update(X_new, P_new, sensorData);
-                    return newState;
+                    if (sensorData.size() == 0) {
+                        return newState;
+                    }
+                    return update(X_new, P_new, sensorData);
                 }
 
 
@@ -78,7 +87,7 @@ namespace ukf {
                 template<typename State, typename Covariance, typename SensorData>
                 std::pair<State, Covariance> update(State const &X, Covariance const &P, const SensorData &sensorData) {
 
-                    std::pair<State, Covariance> result{};
+                    std::pair<State, Covariance> result{X, P};
                     auto &X_new = result.first;
                     auto &P_new = result.second;
 
@@ -120,7 +129,7 @@ namespace ukf {
                         if (ltt.rankUpdate(u, -1)
                                .info() != Eigen::Success) {
                             std::cerr << "Error during rank update\n";
-                            return {X, P}; // returning non modified version of the state
+                            return result; // returning non modified version of the state
                         }
                     }
 

@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 14)
 find_package(GTest)
 
 set(SOURCE_FILES core/parameters_test.cpp
-        math/transformation_test.cpp
+        core/math/transformation_test.cpp
         core/detail/functor_test.cpp
         core/detail/transform_test.cpp
         core/detail/ukf_impl_test.cpp

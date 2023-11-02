@@ -11,28 +11,28 @@ namespace ukf {
     namespace core {
 
 
-        template< typename ...Tp >
+        template<typename ...Tp>
         std::tuple<Tp...> constructTuple() {
-            return { Tp{ std::numeric_limits<std::size_t>::max() }... };
+            return {Tp{std::numeric_limits<std::size_t>::max()}...};
         }
 
-        template< typename ...Fields >
+        template<typename ...Fields>
         struct StaticFields {
 
             static constexpr std::size_t StateSize = detail::generation::calculateStaticSize<Fields...>();
             using StateVectorType = Eigen::Vector<float, StateSize>;
 
-            template< typename Field >
+            template<typename Field>
             Field get() const {
                 return std::get<Field>(_fields);
             }
 
-            template< typename Field >
+            template<typename Field>
             void updateOffset(std::size_t offset) {
                 std::get<Field>(_fields).offset = offset;
             }
 
-            template< typename State >
+            template<typename State>
             StateVectorType apply(const State &state, double dt) const {
                 StateVectorType updatedState = StateVectorType::Zero();
                 ukf::core::transition::timeUpdate(state, updatedState, _fields, dt);
@@ -42,26 +42,24 @@ namespace ukf {
 
         private:
             // Create tuple with offset given input order
-            std::tuple<Fields...> _fields = constructTuple<Fields
-                                                           ...>();
-            //= detail::constructTuple<Fields...>();
+            std::tuple<Fields...> _fields = constructTuple<Fields...>();
         };
 
 
-        template< typename Fields >
+        template<typename Fields>
         class SensorData;
 
-        template< typename ...State_Fields >
+        template<typename ...State_Fields>
         class SensorData<StaticFields<State_Fields...>> {
 
         public:
 
-            template< typename State >
+            template<typename State>
             Eigen::VectorXf h(const State &X) const {
                 return _stateFields.apply(X, -1);
             }
 
-            template< typename Field, typename FieldData >
+            template<typename Field, typename FieldData = typename Field::ModelType::DataType>
             void setMeasurement(FieldData &&data) {
                 const Field field = _stateFields.template get<Field>();
                 if (field.offset != std::numeric_limits<std::size_t>::max()) {
@@ -88,19 +86,23 @@ namespace ukf {
 
 
         private:
-            template< typename Field, typename Data >
+            template<typename Field, typename Data/* = typename Field::ModelType::DataType*/>
             void set(Data &&data, std::size_t offset) {
                 _noising.block<Field::Size, Field::Size>(offset, offset) = Field::model.noising(/*data*/);
                 _measurement.segment<Field::Size>(offset) = Field::model.toVector(
                         std::forward<Data>(data));
             }
 
-            // problem: mix of multi and non multi
-            template< typename Field, typename Data >
+            template<typename Field, typename Data>
             std::size_t append(Data &&data) {
                 const auto offset = _measurement.size();
                 const auto newSize = offset + Field::Size;
+
+                const Eigen::MatrixXf zeroMatrix = Eigen::MatrixXf::Zero(newSize, Field::Size);
                 _noising.conservativeResize(newSize, newSize);
+                
+                _noising.block(0, offset, newSize, Field::Size) = zeroMatrix;
+                _noising.block(offset, 0, Field::Size, newSize) = zeroMatrix.transpose();
                 _measurement.conservativeResize(newSize);
 
                 set<Field>(std::forward<Data>(data), offset);

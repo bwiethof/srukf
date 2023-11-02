@@ -53,6 +53,8 @@ namespace ukf {
 
             using deps = detail::Pack<Inputs...>;
 
+            static constexpr std::size_t Size = N;
+
             // TODO: expect value for noising
             virtual Eigen::Matrix<float, N, N> noising() const = 0;
 
@@ -70,7 +72,7 @@ namespace ukf {
             const static Model model;
             using ModelType = Model;
 
-            static constexpr std::size_t Size = N;
+            static constexpr std::size_t Size = Model::Size;
             // Offset to be used to track position in vector
             std::size_t offset{};
 

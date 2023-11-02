@@ -22,6 +22,8 @@ namespace ukf {
 
             virtual Eigen::Vector<float, N> toVector(Data &&data) const = 0;
 
+            using DataType = Data;
+
         private:
             virtual Eigen::Vector<float, N> predict(const Inputs &...inputs) const = 0;
         };

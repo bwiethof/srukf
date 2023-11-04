@@ -13,6 +13,7 @@ set(SOURCE_FILES core/parameters_test.cpp
         core/field_test.cpp
         core/sensor.test.cpp
         core/sensor_data_test.cpp
+        core/state_test.cpp
 )
 
 add_executable(SRUKF_Test ${SOURCE_FILES})

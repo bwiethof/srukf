@@ -5,6 +5,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include "field.hpp"
 
 
 namespace ukf {
@@ -16,15 +17,13 @@ namespace ukf {
 
         template<typename ...State_Fields>
         class Covariance<ukf::core::StateFields<State_Fields...>> : public Eigen::MatrixXf {
-
+            static constexpr std::size_t Size = ukf::core::StateFields<State_Fields...>::StateSize;
         public:
             virtual ~Covariance() = default;
 
             //region constructors and assignments
 
-            // TODO tuple initialization is missing -> currently the offset is 0 for all fields => clash
-            // Constructs the state with initial values to zero
-            Covariance() : Eigen::MatrixXf(ukf::core::StateFields<State_Fields...>::StateVectorType::Zero()) {}
+            Covariance() : Eigen::MatrixXf(Eigen::MatrixXf::Zero(Size, Size)) {}
 
             Covariance(Covariance &&other) noexcept = default;
 
@@ -39,12 +38,12 @@ namespace ukf {
             //region Eigen related constructors and operators
             template<typename OtherDerived>
             explicit Covariance(const Eigen::MatrixBase<OtherDerived> &other)
-                    : Eigen::MatrixXf(other) {}
+                    : Eigen::MatrixXf(other) {
+            }
 
             template<typename OtherDerived>
-            explicit Covariance(Eigen::MatrixBase<OtherDerived>
-                                &&other)
-                    :Eigen::VectorXd(std::move(other)) {}
+            explicit Covariance(Eigen::MatrixBase<OtherDerived> &&other)
+                    :Eigen::MatrixXf(std::move(other)) {}
 
             template<typename OtherDerived>
             Covariance &operator=(const Eigen::EigenBase<OtherDerived> &other) {
@@ -60,16 +59,10 @@ namespace ukf {
 
             //endregion Eigen related constructors and operators
 
-            // Get field information  -> TODO check if necessary to expose
             template<typename Field>
-            inline Field field() const {
-                return _stateFields.template getField<Field>();
-            }
-
-            template<typename Field>
-            Eigen::Matrix<float, Field::Size, Field::Size> fieldCovariance() const {
+            Eigen::Matrix<float, Field::Size, Field::Size> get() const {
                 const auto &field = _stateFields.template getField<Field>();
-                return block<detail::FieldSize<Field>, detail::FieldSize<Field>>(field.offset, field.offset);
+                return block<detail::FieldSize<Field>, detail::FieldSize<Field >>(field.offset, field.offset);
             }
 
 

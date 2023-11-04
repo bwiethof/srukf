@@ -54,7 +54,7 @@ namespace {
     using SensorDataType = ukf::core::SensorData<ukf::core::StaticFields<SensorSize2, SensorSize4>>;
 }
 
-TEST(SensorData, construction) {
+TEST(SensorData, constructionTest) {
     SensorDataType sensorData{};
 
     ASSERT_EQ(sensorData.vector().size(), 0);
@@ -73,6 +73,24 @@ TEST(SensorData, construction) {
     // Add second measurement shall be reflected
     {
         const Eigen::Vector<float, 6> expected(1.1f, 1.2f, 2.1f, 2.2f, 2.3f, 2.4f);
+        const Eigen::Matrix<float, 6, 6> expectedMatrix =
+                (Eigen::Matrix<float, 6, 6>() <<
+                                              2.0, 0, 0, 0, 0, 0,
+                        0, 2.0, 0, 0, 0, 0,
+                        0, 0, 4.0, 0, 0, 0,
+                        0, 0, 0, 4.0, 0, 0,
+                        0, 0, 0, 0, 4.0, 0,
+                        0, 0, 0, 0, 0, 4.0
+                ).finished();
+
+        ASSERT_TRUE(sensorData.vector().isApprox(expected));
+        ASSERT_TRUE(sensorData.noising().isApprox(expectedMatrix));
+    }
+
+    sensorData.setMeasurement<SensorSize2>({.value_1=3.1f, .value_2=3.2f});
+    // New measurement shall overwrite the previous one
+    {
+        const Eigen::Vector<float, 6> expected(3.1f, 3.2f, 2.1f, 2.2f, 2.3f, 2.4f);
         const Eigen::Matrix<float, 6, 6> expectedMatrix =
                 (Eigen::Matrix<float, 6, 6>() <<
                                               2.0, 0, 0, 0, 0, 0,

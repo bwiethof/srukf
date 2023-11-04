@@ -12,10 +12,30 @@
 namespace ukf {
     namespace core {
 
+        namespace detail {
+            template<std::size_t Offset, typename Derived, typename T>
+            auto compose(Eigen::MatrixBase<Derived> &Q, const T &) {
+                Q.block(Offset, Offset, FieldSize<T>, FieldSize<T>) = T::model.noising();
+            }
+
+            template<std::size_t Offset, typename Derived, typename T, typename ...Args>
+            auto compose(Eigen::MatrixBase<Derived> &Q, const T &, const Args &...args) {
+                Q.block(Offset, Offset, FieldSize<T>, FieldSize<T>) = Model<T>.noising();
+                compose<Offset + FieldSize<T>>(Q, args...);
+            }
+
+            template<typename ...StateFields>
+            auto constructNoising() {
+                const ukf::core::StateFields<StateFields...> fields;
+                Eigen::MatrixXf Q = Eigen::MatrixXf::Zero(fields.StateSize, fields.StateSize);
+                compose<0>(Q, fields.template getField<StateFields>()...);
+                return Q;
+            }
+        }
+
         template<typename Fields, int SIZE = 0>
         class State;
 
-        // TODO: how to work this out with size
         template<typename ...State_Fields>
         class State<ukf::core::StateFields<State_Fields...>> : public Eigen::VectorXf {
 
@@ -38,11 +58,11 @@ namespace ukf {
 
             //region Eigen related constructors and operators
             template<typename OtherDerived>
-            explicit State(const Eigen::MatrixBase<OtherDerived> &other)
+            explicit State(const Eigen::EigenBase<OtherDerived> &other)
                     : Eigen::VectorXf(other) {}
 
             template<typename OtherDerived>
-            explicit State(Eigen::MatrixBase<OtherDerived> &&other)
+            explicit State(Eigen::EigenBase<OtherDerived> &&other)
                     : Eigen::VectorXf(std::move(other)) {}
 
             template<typename OtherDerived>
@@ -64,18 +84,6 @@ namespace ukf {
                 return _stateFields.apply(*this, dt);
             }
 
-
-            // Get field information  -> TODO check if necessary to expose
-            template<typename Field>
-            inline Field field() const {
-                return _stateFields.template getField<Field>();
-            }
-
-            template<typename Field>
-            Eigen::Vector<float, Field::Size> fieldData() const {
-                return segment<detail::FieldSize<Field>>(_stateFields.template getField<Field>().offset);
-            }
-
             template<class Field>
             Field get() const {
                 Field field = _stateFields.template getField<Field>();
@@ -89,9 +97,15 @@ namespace ukf {
 
 
         private:
+
+            template<typename Field>
+            Eigen::Vector<float, Field::Size> fieldData() const {
+                return segment<detail::FieldSize<Field >>(_stateFields.template getField<Field>().offset);
+            }
+
             // manages fields including position and transition
             ukf::core::StateFields<State_Fields...> _stateFields{};
-            Eigen::MatrixXf _systemNoise{}; // should be constant -> external maybe better and doing a compile time check?
+            Eigen::MatrixXf _systemNoise = detail::constructNoising<State_Fields...>(); // should be constant -> external maybe better and doing a compile time check?
         };
     }
 }

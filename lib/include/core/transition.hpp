@@ -22,8 +22,10 @@ namespace ukf {
                 template<typename State, typename Field, typename Derived>
                 void fieldTimeUpdate(const State &state, const Field &field, Eigen::DenseBase<Derived> &newState,
                                      double dt) {
-                    newState.template segment<Field::Size>(field.offset) = performTimeUpdate(state, Field::model, dt,
-                                                                                             typename Field::ModelType::deps{});
+                    if (field.offset != std::numeric_limits<std::size_t>::max())
+                        newState.template segment<Field::Size>(field.offset) = performTimeUpdate(state, Field::model,
+                                                                                                 dt,
+                                                                                                 typename Field::ModelType::deps{});
                 }
             }
 
@@ -62,7 +64,7 @@ namespace ukf {
                 void fieldTimeUpdate(const State &state, const std::vector<Field> &fields,
                                      Eigen::DenseBase<Derived> &newState, double dt) {
                     const std::size_t shift = state.rows() - newState.rows();
-                    for (auto const   &field: fields) {
+                    for (auto const &field: fields) {
 
                         newState.template segment<Field::Size>(field.offset - shift) = performTimeUpdate(state, field,
                                                                                                          Field::model,

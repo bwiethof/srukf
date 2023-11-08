@@ -44,7 +44,8 @@ namespace ukf {
 
             //region constructors and assignments
             // Constructs the state with initial values to zero
-            State() : Eigen::VectorXf(ukf::core::StateFields<State_Fields...>::StateVectorType::Zero()) {}
+            State()
+                    : Eigen::VectorXf(ukf::core::StateFields<State_Fields...>::StateVectorType::Zero()) {}
 
             State(State &&other) noexcept = default;
 
@@ -58,11 +59,11 @@ namespace ukf {
 
             //region Eigen related constructors and operators
             template<typename OtherDerived>
-            explicit State(const Eigen::EigenBase<OtherDerived> &other)
+            State(const Eigen::EigenBase<OtherDerived> &other)
                     : Eigen::VectorXf(other) {}
 
             template<typename OtherDerived>
-            explicit State(Eigen::EigenBase<OtherDerived> &&other)
+            State(Eigen::EigenBase<OtherDerived> &&other)
                     : Eigen::VectorXf(std::move(other)) {}
 
             template<typename OtherDerived>

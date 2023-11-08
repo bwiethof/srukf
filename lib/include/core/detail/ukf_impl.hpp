@@ -22,7 +22,6 @@ namespace ukf {
                 return os;
             }
 
-            // Maybe with inheritance -> SLAM is extension of UKF -> consistent with other stuff + map management can be mor local injected
             class Ukf {
             public:
 
@@ -125,16 +124,13 @@ namespace ukf {
 
                     // Perform rank Update for each column in U
                     Eigen::LLT<Eigen::MatrixXf> ltt(covarianceMatrix);
-                    for (auto const &u: U.colwise()) {
-                        if (ltt.rankUpdate(u, -1)
-                               .info() != Eigen::Success) {
-                            std::cerr << "Error during rank update\n";
-                            return result; // returning non modified version of the state
-                        }
-                    }
 
+                    if (!math::performCholeskyUpdate(covarianceMatrix, U, -1)) {
+                        std::cerr << "Error during rank update\n";
+                        return result; // returning non modified version of the state
+                    }
                     // Assign values to ukf state after successfully rank update
-                    P_new = ltt.matrixL();
+                    P_new = covarianceMatrix;
                     X_new += K * (sensorData.vector() - measurementMean);
 
                     return result;

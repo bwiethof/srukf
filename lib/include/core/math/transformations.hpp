@@ -6,6 +6,7 @@
 #include <Eigen/Core>
 #include <Eigen/QR>
 #include <numeric>
+#include <iostream>
 #include "core/parameters.hpp"
 
 namespace ukf {
@@ -72,6 +73,32 @@ namespace ukf {
                                                .transpose());
             }
 
+
+            /**
+             * @brief Perform the Cholesky update on a given covariance matrix
+             *
+             * This function performs a Cholesky update on a given covariance matrix. It updates
+             * the covariance matrix by adding multiple update matrices to it.
+             *
+             * @Remarks P needs to be a lower triangular matrix
+             *
+             * @tparam DerivedCovariance The type of the covariance matrix
+             * @tparam DerivedUpdateMatrix The type of the update matrix
+             * @param P The covariance matrix to update
+             * @param U The update matrix
+             * @param value The value to be added to the update matrix
+             * @return Returns true if the Cholesky update is successful, otherwise returns false.
+             */
+            template<typename DerivedCovariance, typename DerivedUpdateMatrix>
+            bool performCholeskyUpdate(Eigen::MatrixBase<DerivedCovariance> &P,
+                                       const Eigen::MatrixBase<DerivedUpdateMatrix> &U, float value) {
+                for (auto const &u: U.colwise()) {
+                    if (Eigen::internal::llt_inplace<float, Eigen::Lower>::rankUpdate(P.derived(), u, value) >= 0)
+                        return false;
+                }
+                return true;
+            }
+
             template<typename S, typename M, typename Q>
             Eigen::MatrixXf
             calculateSquareRootCovariance(const Eigen::MatrixBase<S> &sigmaPoints, const Eigen::MatrixBase<M> &mean,
@@ -92,10 +119,14 @@ namespace ukf {
                                            .matrixQR()
                                            .topLeftCorner(mean.size(), mean.size())
                                            .template triangularView<Eigen::Upper>();
-                // apply cholesky rank update to upper triangle of R matrix Eigen::HouseholderQR<Eigen::MatrixXf>(A)
-                return Eigen::LLT<Eigen::MatrixXf>(R_prime).rankUpdate(sigmaPoints.col(0) - mean, params.W0_c)
-                                                           .matrixL();
 
+                // Transpose since Upper triangular Part of R = L^T
+                R_prime.transposeInPlace();
+                if (!performCholeskyUpdate(R_prime, sigmaPoints.col(0) - mean, params.W0_c)) {
+                    std::cerr << "Error performing rank update" << "\n";
+                };
+
+                return R_prime;
             }
 
             template<typename DerivedIn, typename DerivedOut, typename Propagator>

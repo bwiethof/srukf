@@ -14,6 +14,8 @@ set(SOURCE_FILES core/parameters_test.cpp
         core/sensor.test.cpp
         core/sensor_data_test.cpp
         core/state_test.cpp
+        core/covariance_test.cpp
+        core/ukf_test.cpp
 )
 
 add_executable(SRUKF_Test ${SOURCE_FILES})

@@ -23,7 +23,8 @@ namespace ukf {
 
             //region constructors and assignments
 
-            Covariance() : Eigen::MatrixXf(Eigen::MatrixXf::Zero(Size, Size)) {}
+            Covariance()
+                    : Eigen::MatrixXf(Eigen::MatrixXf::Zero(Size, Size)) {}
 
             Covariance(Covariance &&other) noexcept = default;
 
@@ -37,12 +38,12 @@ namespace ukf {
 
             //region Eigen related constructors and operators
             template<typename OtherDerived>
-            explicit Covariance(const Eigen::MatrixBase<OtherDerived> &other)
+            Covariance(const Eigen::MatrixBase<OtherDerived> &other)
                     : Eigen::MatrixXf(other) {
             }
 
             template<typename OtherDerived>
-            explicit Covariance(Eigen::MatrixBase<OtherDerived> &&other)
+            Covariance(Eigen::MatrixBase<OtherDerived> &&other)
                     :Eigen::MatrixXf(std::move(other)) {}
 
             template<typename OtherDerived>

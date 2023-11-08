@@ -16,6 +16,7 @@ namespace ukf {
             return {Tp{std::numeric_limits<std::size_t>::max()}...};
         }
 
+
         template<typename ...Fields>
         struct StaticFields {
 
@@ -33,9 +34,9 @@ namespace ukf {
             }
 
             template<typename State>
-            StateVectorType apply(const State &state, double dt) const {
-                StateVectorType updatedState = StateVectorType::Zero();
-                ukf::core::transition::timeUpdate(state, updatedState, _fields, dt);
+            Eigen::VectorXf apply(const State &state, std::size_t measurementSize) const {
+                Eigen::VectorXf updatedState = Eigen::VectorXf::Zero(measurementSize);
+                ukf::core::transition::timeUpdate(state, updatedState, _fields, -1);
                 return updatedState;
             }
 
@@ -56,7 +57,7 @@ namespace ukf {
 
             template<typename State>
             Eigen::VectorXf h(const State &X) const {
-                return _stateFields.apply(X, -1);
+                return _stateFields.apply(X, _measurement.rows());
             }
 
             template<typename Field, typename FieldData = typename Field::ModelType::DataType>
@@ -100,7 +101,7 @@ namespace ukf {
 
                 const Eigen::MatrixXf zeroMatrix = Eigen::MatrixXf::Zero(newSize, Field::Size);
                 _noising.conservativeResize(newSize, newSize);
-                
+
                 _noising.block(0, offset, newSize, Field::Size) = zeroMatrix;
                 _noising.block(offset, 0, Field::Size, newSize) = zeroMatrix.transpose();
                 _measurement.conservativeResize(newSize);

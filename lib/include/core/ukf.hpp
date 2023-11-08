@@ -8,6 +8,7 @@
 #include "core/sensor_data.h"
 #include "covariance.hpp"
 #include "core/detail/ukf_impl.hpp"
+#include "state.hpp"
 #include <Eigen/Core>
 
 namespace ukf {
@@ -28,11 +29,37 @@ namespace ukf {
          */
         template<typename ...State_Fields>
         class Ukf<ukf::core::StateFields<State_Fields...>> : public detail::Ukf {
+            static constexpr std::size_t Size = ukf::core::StateFields<State_Fields...>::StateSize;
             using StateType = State<StateFields<State_Fields...>>;
             using CovarianceType = Covariance<StateFields<State_Fields...>>;
 
+
         public:
             Ukf() = default;
+
+            Ukf(const StateType &X, const CovarianceType &P)
+                    : _state(X),
+                      _covariance(P) {}
+
+            Ukf(StateType &&X, CovarianceType &&P)
+                    : _state(std::move(X)),
+                      _covariance(std::move(P)) {}
+
+            template<typename Derived_State, typename Derived_Covariance>
+            Ukf(const Eigen::MatrixBase<Derived_State> &X, const Eigen::MatrixBase<Derived_Covariance> &P)
+                    : _state{X},
+                      _covariance{P} {
+                EIGEN_STATIC_ASSERT_MATRIX_SPECIFIC_SIZE(Eigen::MatrixBase<Derived_Covariance>, Size, Size);
+                EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(Eigen::MatrixBase<Derived_State>, Size);
+            }
+
+            template<typename Derived_State, typename Derived_Covariance>
+            Ukf(Eigen::MatrixBase<Derived_State> &&X, Eigen::MatrixBase<Derived_Covariance> &&P)
+                    : _state{std::move(X)},
+                      _covariance{std::move(P)} {
+                EIGEN_STATIC_ASSERT_MATRIX_SPECIFIC_SIZE(Eigen::MatrixBase<Derived_Covariance>, Size, Size);
+                EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(Eigen::MatrixBase<Derived_State>, Size);
+            }
 
             /**
              * Performs a time step
@@ -41,11 +68,19 @@ namespace ukf {
              */
             template<typename SensorData>
             void step(const SensorData &sensorData, double dt) {
-                std::tie(this->_state, this->_covariance) = this->timeStep<StateType, CovarianceType, SensorData>(
-                        _state, _covariance, dt, sensorData);
+                std::tie(_state, _covariance) =
+                        this->timeStep<StateType, CovarianceType, SensorData>(_state, _covariance, dt, sensorData);
             }
 
-        private:
+            StateType getState() const {
+                return _state;
+            }
+
+            CovarianceType getCovariance() const {
+                return _covariance;
+            }
+
+        protected:
             Eigen::MatrixXf getSystemNoise() const override {
                 return _state.noising();
             }
@@ -53,11 +88,8 @@ namespace ukf {
 
         private:
 
-            ukf::core::State<ukf::core::StateFields<State_Fields...>> _state{};
-            ukf::core::Covariance<ukf::core::StateFields<State_Fields...>> _covariance{};
-
-            Eigen::MatrixXf _systemNoise{};
-
+            StateType _state{};
+            CovarianceType _covariance{};
         };
 
 

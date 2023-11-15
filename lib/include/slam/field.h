@@ -31,10 +31,10 @@ namespace ukf {
 
         };
 
-        template<std::size_t N, typename Model>
-        struct Field : public core::Field<N, Model> {
-            using core::Field<N, Model>::Size;
-            using Base = core::Field<N, Model>;
+        template<typename Model>
+        struct Field : public core::Field<Model> {
+            using core::Field<Model>::Size;
+            using Base = core::Field<Model>;
 
             Field(std::size_t offset, std::size_t id) : Base(offset), _id(id) {}
 

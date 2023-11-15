@@ -55,13 +55,12 @@ namespace ukf {
 
             static constexpr std::size_t Size = N;
 
-            // TODO: expect value for noising
             virtual Eigen::Matrix<float, N, N> noising() const = 0;
 
             virtual Eigen::Vector<float, N> timeUpdate(float dt, const Inputs &...input) const = 0;
         };
 
-        template<std::size_t N, typename Model>
+        template<typename Model>
         struct Field {
             Field() = default;
 
@@ -76,10 +75,10 @@ namespace ukf {
             // Offset to be used to track position in vector
             std::size_t offset{};
 
-            Eigen::Vector<float, N> data{};
+            Eigen::Vector<float, Model::Size> data{};
         };
 
-        template<std::size_t N, typename Model> const Model Field<N, Model>::model;
+        template<typename Model> const Model Field<Model>::model;
 
         /**
          * @class StateFields

@@ -114,6 +114,10 @@ namespace ukf {
             Eigen::MatrixXf _noising{};
 
             StaticFields<State_Fields...> _stateFields{};
+
+           public:
+
+          EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         };
 
 

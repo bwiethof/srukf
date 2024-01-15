@@ -10,14 +10,13 @@ set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 add_subdirectory(lib)
 
 set(BUILD_RUNNER true)
+set(BUILD_SKRUF_TESTING false)
 
 if (BUILD_RUNNER)
     add_subdirectory(runner)
 endif ()
 
 include(CTest)
-if (BUILD_TESTING)
+if (BUILD_SKRUF_TESTING)
     add_subdirectory(tests)
 endif ()
-
-

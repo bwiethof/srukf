@@ -64,7 +64,7 @@ namespace ukf {
         struct Field {
             Field() = default;
 
-            explicit Field(std::size_t offset) : offset{offset} {}
+            explicit Field(std::size_t _offset) : offset{_offset} {}
 
             virtual ~Field() = default;
 
@@ -76,6 +76,8 @@ namespace ukf {
             std::size_t offset{};
 
             Eigen::Vector<float, Model::Size> data{};
+
+          EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         };
 
         template<typename Model> const Model Field<Model>::model;

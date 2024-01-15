@@ -93,7 +93,8 @@ namespace ukf {
             bool performCholeskyUpdate(Eigen::MatrixBase<DerivedCovariance> &P,
                                        const Eigen::MatrixBase<DerivedUpdateMatrix> &U, float value) {
                 for (auto const &u: U.colwise()) {
-                    if (Eigen::internal::llt_inplace<float, Eigen::Lower>::rankUpdate(P.derived(), u, value) >= 0)
+                    const auto row = Eigen::internal::llt_inplace<float, Eigen::Lower>::rankUpdate(P.derived(), u, value);
+                    if (row>= 0)
                         return false;
                 }
                 return true;

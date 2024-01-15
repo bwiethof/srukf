@@ -42,9 +42,9 @@ namespace ukf {
                  * @param sensorData sensorData after given step
                  * @param dt time since last step
                  */
-                template<typename State, typename Covariance, typename SensorData>
+                template<typename State, typename Covariance, typename SensorData, typename ...Inputs>
                 std::pair<State, Covariance>
-                timeStep(State const &X, Covariance const &P, double dt, SensorData const &sensorData) {
+                timeStep(State const &X, Covariance const &P, double dt, SensorData const &sensorData, Inputs&& ...inputs) {
                     std::pair<State, Covariance> newState{};
                     State &X_new = newState.first;
                     Covariance &P_new = newState.second;
@@ -123,7 +123,7 @@ namespace ukf {
                     Eigen::MatrixXf covarianceMatrix = P;
 
                     // Perform rank Update for each column in U
-                    Eigen::LLT<Eigen::MatrixXf> ltt(covarianceMatrix);
+                    //Eigen::LLT<Eigen::MatrixXf> ltt(covarianceMatrix);
 
                     if (!math::performCholeskyUpdate(covarianceMatrix, U, -1)) {
                         std::cerr << "Error during rank update\n";

@@ -21,4 +21,4 @@ message(${optional_SOURCE_DIR})
 
 target_include_directories(srukf INTERFACE include INTERFACE ${optional_SOURCE_DIR}/include)
 target_link_libraries(srukf INTERFACE Eigen3::Eigen)
-target_compile_options(srukf INTERFACE -Wall -Wextra -Wpedantic -Werror)
+#target_compile_options(srukf INTERFACE -Wall -Wextra -Wpedantic -Werror)

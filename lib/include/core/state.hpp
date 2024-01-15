@@ -13,12 +13,18 @@ namespace ukf {
     namespace core {
 
         namespace detail {
-            template<std::size_t Offset, typename Derived, typename T>
+
+            template<std::size_t Offset=0, typename Derived>
+            constexpr auto compose(Eigen::MatrixBase<Derived>&Q){
+              // nothing to do here since nothing to set
+            }
+
+            template<std::size_t Offset=0, typename Derived, typename T>
             auto compose(Eigen::MatrixBase<Derived> &Q, const T &) {
                 Q.block(Offset, Offset, FieldSize<T>, FieldSize<T>) = T::model.noising();
             }
 
-            template<std::size_t Offset, typename Derived, typename T, typename ...Args>
+            template<std::size_t Offset=0, typename Derived, typename T, typename ...Args>
             auto compose(Eigen::MatrixBase<Derived> &Q, const T &, const Args &...args) {
                 Q.block(Offset, Offset, FieldSize<T>, FieldSize<T>) = Model<T>.noising();
                 compose<Offset + FieldSize<T>>(Q, args...);
@@ -28,7 +34,7 @@ namespace ukf {
             auto constructNoising() {
                 const ukf::core::StateFields<StateFields...> fields;
                 Eigen::MatrixXf Q = Eigen::MatrixXf::Zero(fields.StateSize, fields.StateSize);
-                compose<0>(Q, fields.template getField<StateFields>()...);
+                compose(Q, fields.template getField<StateFields>()...);
                 return Q;
             }
         }

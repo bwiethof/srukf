@@ -75,7 +75,6 @@ class Ukf<ukf::core::StateFields<State_Fields...>> : public detail::Ukf {
     std::tie(_state, _covariance) =
         this->timeStep<StateType, CovarianceType, SensorData, Inputs...>(
             _state, _covariance, dt, sensorData, std::forward<Inputs>(inp)...);
-    std::function<void(void)> f;
   }
 
   StateType getState() const { return _state; }

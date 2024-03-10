@@ -14,7 +14,8 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(optional)
 
-add_library(srukf INTERFACE)
+add_library(srukf INTERFACE
+        include/core/field_base.h)
 
 message(${optional_SOURCE_DIR})
 

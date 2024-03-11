@@ -25,9 +25,9 @@ void fieldTimeUpdate(const State &state, const Field &field,
                      Eigen::DenseBase<Derived> &newState, double dt,
                      Inputs &&...inputs) {
   if (field.offset != std::numeric_limits<std::size_t>::max())
-    newState.template segment<Field::Size>(field.offset) = performTimeUpdate(
-        state, Field::model, dt, typename Field::ModelType::deps{},
-        std::forward<Inputs>(inputs)...);
+    newState.template segment<Field::Size>(field.offset) =
+        performTimeUpdate(state, field, dt, typename Field::depsType{},
+                          std::forward<Inputs>(inputs)...);
 }
 }  // namespace __detail
 
@@ -74,10 +74,23 @@ class Performer {
   }
 
  private:
+  /**
+   *
+   *
+    _updatesState.template segment<Field::Size>(field.offset) = performOnModel(
+        dt, Field::model, std::forward<decltype(inputs)>(inputs)...);
+   * @tparam FieldType
+   * @tparam Input
+   * @param dt
+   * @param field
+   * @param input
+   * @return
+   */
   template <typename FieldType, typename... Input>
   auto fieldUpdate(float dt, const FieldType &field, Input &&...input) {
-    return withExpandArgs(dt, field, field.GetDependencies(), field.GetInputs(),
-                          std::forward<Input>(input)...);
+    _updatesState.template segment<FieldType::Size>(field.offset) =
+        withExpandArgs(dt, field, field.GetDependencies(), field.GetInputs(),
+                       std::forward<Input>(input)...);
   }
 
   template <std::size_t N, typename... Args1, typename... Deps,

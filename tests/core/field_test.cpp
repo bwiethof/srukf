@@ -10,7 +10,10 @@
 
 namespace {
 
-struct MockModel1 : public ukf::core::Model<3> {
+struct MockFieldImpl1
+    : public ukf::core::Field<3, ukf::core::StateDependencies<>,
+                              ukf::core::Inputs<>> {
+  using Field::Field;
   Eigen::Matrix<float, 3UL, 3UL> noising() const override { return {}; }
 
   Eigen::Vector<float, 3UL> timeUpdate(float dt) const override {
@@ -18,9 +21,10 @@ struct MockModel1 : public ukf::core::Model<3> {
   }
 };
 
-using MockFieldImpl1 = ukf::core::Field<MockModel1>;
-
-struct MockModel2 : public ukf::core::Model<2, MockFieldImpl1> {
+struct MockFieldImpl2
+    : public ukf::core::Field<2, ukf::core::StateDependencies<MockFieldImpl1>,
+                              ukf::core::Inputs<>> {
+  using Field::Field;
   Eigen::Matrix<float, 2UL, 2UL> noising() const override {
     return Eigen::Matrix2f::Identity();
   }
@@ -30,8 +34,6 @@ struct MockModel2 : public ukf::core::Model<2, MockFieldImpl1> {
     return {field.data[0], field.data[1]};
   }
 };
-
-using MockFieldImpl2 = ukf::core::Field<MockModel2>;
 
 template <std::size_t N>
 struct MockWithOffsetAndSize {

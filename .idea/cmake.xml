@@ -2,7 +2,6 @@
 <project version="4">
   <component name="CMakeSharedSettings">
     <configurations>
-      <configuration PROFILE_NAME="Debug" ENABLED="true" GENERATION_DIR="build/Debug" CONFIG_NAME="Debug" GENERATION_OPTIONS="-G Ninja --preset conan-debug" />
       <configuration PROFILE_NAME="Release" ENABLED="true" GENERATION_DIR="build/Release" CONFIG_NAME="Release" GENERATION_OPTIONS="-G Ninja --preset conan-debug" />
       <configuration PROFILE_NAME="RelWithDebInfo" ENABLED="false" GENERATION_DIR="build/RelWithDebInfo" CONFIG_NAME="RelWithDebInfo" GENERATION_OPTIONS="-G Ninja --preset conan-debug" />
     </configurations>

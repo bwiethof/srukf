@@ -20,7 +20,8 @@ class UKFMock : public ukf::core::detail::Ukf {
   MOCK_METHOD(Eigen::MatrixXf, getSystemNoise, (), (const));
 };
 
-struct MockModel : public ukf::core::Model<3> {
+struct MockField1 : public ukf::core::SimpleField<3> {
+  using ukf::core::SimpleField<3>::SimpleField;
   Eigen::Matrix<float, 3UL, 3UL> noising() const override {
     return Eigen::Matrix3f::Identity();
   }
@@ -31,12 +32,11 @@ struct MockModel : public ukf::core::Model<3> {
 };
 
 // TODO: remove FieldSize  by using MockModel Size
-using MockField1 = ukf::core::Field<MockModel>;
 
 struct DataType {};
 
-struct MockSensorModel
-    : public ukf::core::SensorModel<2, DataType, MockField1> {
+struct MockSensor : public ukf::core::SensorModel<2, DataType, MockField1> {
+  using SensorModel::SensorModel;
   Eigen::Matrix<float, 2UL, 2UL> noising() const override {
     return Eigen::Matrix2f::Identity();
   }
@@ -49,8 +49,6 @@ struct MockSensorModel
     return {field.data[0] + field.data[1], field.data[2]};
   }
 };
-
-using MockSensor = ukf::core::Field<MockSensorModel>;
 
 // Test prediction part of Ukf.timeStep method
 TEST(UkfTest, TimeStep) {

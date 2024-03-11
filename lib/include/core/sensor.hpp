@@ -13,9 +13,10 @@ namespace ukf {
 namespace core {
 
 template <std::size_t N, typename Data, typename... Inputs>
-struct SensorModel
-    : HasModel<N, StateDependencies<Inputs...>> {
+struct SensorModel : SimpleField<N, Inputs...> {
   ~SensorModel() override = default;
+
+  using SimpleField<N, Inputs...>::SimpleField;
 
   // timeUpdate in Sensor only uses current State. Therefore, dt is not needed
   virtual Eigen::Vector<float, N> timeUpdate(

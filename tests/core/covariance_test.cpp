@@ -9,7 +9,8 @@
 #include "core/field.hpp"
 
 namespace {
-struct MockFieldModel : public ukf::core::Model<3> {
+struct MockField : public ukf::core::SimpleField<3> {
+  using ukf::core::SimpleField<3>::SimpleField;
   Eigen::Matrix<float, 3UL, 3UL> noising() const override {
     return Eigen::Matrix3f::Identity() * 3;
   }
@@ -19,7 +20,8 @@ struct MockFieldModel : public ukf::core::Model<3> {
   }
 };
 
-struct MockFieldModelSize5 : public ukf::core::Model<5> {
+struct MockFieldSize5 : public ukf::core::SimpleField<5> {
+  using ukf::core::SimpleField<5>::SimpleField;
   Eigen::Matrix<float, 5UL, 5UL> noising() const override {
     return Eigen::Matrix<float, 5, 5>::Identity() * 5;
   }
@@ -29,8 +31,6 @@ struct MockFieldModelSize5 : public ukf::core::Model<5> {
   }
 };
 
-using MockField = ukf::core::Field<MockFieldModel>;
-using MockFieldSize5 = ukf::core::Field<MockFieldModelSize5>;
 using Fields = ukf::core::StateFields<MockField>;
 }  // namespace
 

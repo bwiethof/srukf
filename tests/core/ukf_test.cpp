@@ -13,10 +13,8 @@ namespace statetest {
 struct MockFieldModel;
 struct MockFieldModelSize5;
 
-using MockField = ukf::core::Field<MockFieldModel>;
-using MockFieldSize5 = ukf::core::Field<MockFieldModelSize5>;
-
-struct MockFieldModel : public ukf::core::Model<3> {
+struct MockField : public ukf::core::SimpleField<3> {
+  using ukf::core::SimpleField<3>::SimpleField;
   Eigen::Matrix<float, 3UL, 3UL> noising() const override {
     return Eigen::Matrix3f::Identity() * 3;
   }
@@ -26,7 +24,8 @@ struct MockFieldModel : public ukf::core::Model<3> {
   }
 };
 
-struct MockFieldModelSize5 : public ukf::core::Model<5> {
+struct MockFieldSize5 : public ukf::core::SimpleField<5> {
+  using ukf::core::SimpleField<5>::SimpleField;
   Eigen::Matrix<float, 5UL, 5UL> noising() const override {
     return Eigen::Matrix<float, 5, 5>::Identity() * 5;
   }
@@ -46,8 +45,9 @@ struct MockDataSize2 {
   float value_2{};
 };
 
-struct SensorModelSize2
+struct SensorSize2
     : public ukf::core::SensorModel<2, MockDataSize2, statetest::MockField> {
+  using SensorModel::SensorModel;
   Eigen::Matrix<float, 2UL, 2UL> noising() const override {
     return Eigen::DiagonalMatrix<float, 2>(2, 2).toDenseMatrix();
   }
@@ -69,9 +69,9 @@ struct MockDataSize4 {
   float value_4{};
 };
 
-struct SensorModelSize4
-    : public ukf::core::SensorModel<4, MockDataSize4,
-                                    statetest::MockFieldSize5> {
+struct SensorSize4 : public ukf::core::SensorModel<4, MockDataSize4,
+                                                   statetest::MockFieldSize5> {
+  using SensorModel::SensorModel;
   Eigen::Matrix<float, 4UL, 4UL> noising() const override {
     return Eigen::DiagonalMatrix<float, 4>(4, 4, 4, 4).toDenseMatrix();
   }
@@ -85,9 +85,6 @@ struct SensorModelSize4
     return {data.value_1, data.value_2, data.value_3, data.value_4};
   }
 };
-
-using SensorSize2 = ukf::core::Field<SensorModelSize2>;
-using SensorSize4 = ukf::core::Field<SensorModelSize4>;
 
 using SensorDataType =
     ukf::core::SensorData<ukf::core::StaticFields<SensorSize2, SensorSize4>>;

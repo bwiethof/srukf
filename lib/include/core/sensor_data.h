@@ -34,9 +34,8 @@ struct StaticFields {
 
   template <typename State>
   Eigen::VectorXf apply(const State &state, std::size_t measurementSize) const {
-    Eigen::VectorXf updatedState = Eigen::VectorXf::Zero(measurementSize);
-    ukf::core::transition::timeUpdate(state, updatedState, _fields, -1);
-    return updatedState;
+    transition::Performer<State> performer{state};
+    return performer.perform(-1, _fields).template segment(0, measurementSize);
   }
 
  private:
@@ -74,8 +73,7 @@ class SensorData<StaticFields<State_Fields...>> {
   virtual Eigen::VectorXf vector() const { return _measurement; }
 
  private:
-  template <typename Field,
-            typename Data /* = typename Field::ModelType::DataType*/>
+  template <typename Field, typename Data>
   void set(Data &&data, std::size_t offset) {
     _noising.block<Field::Size, Field::Size>(offset, offset) =
         Field{}.noising(/*data*/);

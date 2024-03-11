@@ -11,8 +11,8 @@ struct MockDataSize2 {
   float value_2{};
 };
 
-struct SensorSize2 : public ukf::core::SensorModel<2, MockDataSize2> {
-  using SensorModel::SensorModel;
+struct SensorSize2 : public ukf::core::Sensor<2, MockDataSize2> {
+  using Sensor::Sensor;
   Eigen::Matrix<float, 2UL, 2UL> noising() const override {
     return Eigen::DiagonalMatrix<float, 2>(2, 2).toDenseMatrix();
   }
@@ -31,8 +31,8 @@ struct MockDataSize4 {
   float value_4{};
 };
 
-struct SensorSize4 : public ukf::core::SensorModel<4, MockDataSize4> {
-  using SensorModel::SensorModel;
+struct SensorSize4 : public ukf::core::Sensor<4, MockDataSize4> {
+  using Sensor::Sensor;
   Eigen::Matrix<float, 4UL, 4UL> noising() const override {
     return Eigen::DiagonalMatrix<float, 4>(4, 4, 4, 4).toDenseMatrix();
   }

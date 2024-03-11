@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <Eigen/Cholesky>
 #include <vector>
 
 #include "core/detail/traits.hpp"
@@ -74,23 +75,16 @@ class Performer {
   }
 
  private:
-  /**
-   *
-   *
-    _updatesState.template segment<Field::Size>(field.offset) = performOnModel(
-        dt, Field::model, std::forward<decltype(inputs)>(inputs)...);
-   * @tparam FieldType
-   * @tparam Input
-   * @param dt
-   * @param field
-   * @param input
-   * @return
-   */
+  static bool isValidOffset(std::size_t offset) {
+    return offset != std::numeric_limits<std::size_t>::max();
+  }
+
   template <typename FieldType, typename... Input>
   auto fieldUpdate(float dt, const FieldType &field, Input &&...input) {
-    _updatesState.template segment<FieldType::Size>(field.offset) =
-        withExpandArgs(dt, field, field.GetDependencies(), field.GetInputs(),
-                       std::forward<Input>(input)...);
+    if (isValidOffset(field.offset))
+      _updatesState.template segment<FieldType::Size>(field.offset) =
+          withExpandArgs(dt, field, field.GetDependencies(), field.GetInputs(),
+                         std::forward<Input>(input)...);
   }
 
   template <std::size_t N, typename... Args1, typename... Deps,
@@ -103,7 +97,7 @@ class Performer {
         std::get<Deps>(std::tuple<Args2...>(std::forward<Args2>(args2)...))...);
   }
 
-  State _state;
+  State _state{};
   State _updatesState{};
 };
 

@@ -35,8 +35,8 @@ struct MockField1 : public ukf::core::SimpleField<3> {
 
 struct DataType {};
 
-struct MockSensor : public ukf::core::SensorModel<2, DataType, MockField1> {
-  using SensorModel::SensorModel;
+struct MockSensor : public ukf::core::Sensor<2, DataType, MockField1> {
+  using Sensor::Sensor;
   Eigen::Matrix<float, 2UL, 2UL> noising() const override {
     return Eigen::Matrix2f::Identity();
   }

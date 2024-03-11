@@ -7,7 +7,7 @@
 namespace {
     struct Data { float value{}; };
 
-    struct MySensor : public ukf::core::SensorModel<1, Data> {
+    struct MySensor : public ukf::core::Sensor<1, Data> {
         Eigen::Matrix<float, 1UL, 1UL> noising() const override {
             return Eigen::Vector<float, 1>{1};
         }

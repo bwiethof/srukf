@@ -13,8 +13,8 @@ namespace ukf {
 namespace core {
 
 template <std::size_t N, typename Data, typename... Inputs>
-struct SensorModel : SimpleField<N, Inputs...> {
-  ~SensorModel() override = default;
+struct Sensor : SimpleField<N, Inputs...> {
+  ~Sensor() override = default;
 
   using SimpleField<N, Inputs...>::SimpleField;
 

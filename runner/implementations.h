@@ -15,19 +15,9 @@ struct sensor_accel_t {
   float z;
   float temperature;
 };
-/*
-struct NoOpModel : public ukf::core::Model<1> {
-  Eigen::Vector<float, 1UL> timeUpdate(float) const override { return {}; }
-
-  Eigen::Matrix<float, 1UL, 1UL> noising() const override { return {}; }
-};
-*/
 
 struct NoOpField : ukf::core::SimpleField<1> {
-  // NoOpField() = default;
   using ukf::core::SimpleField<1>::SimpleField;
-  //  explicit NoOpField(std::size_t offset) : ukf::core::SimpleField<1>(offset)
-  //  {}
   Eigen::Vector<float, 1UL> timeUpdate(float) const override { return {}; }
 
   Eigen::Matrix<float, 1UL, 1UL> noising() const override { return {}; }
@@ -75,7 +65,7 @@ struct SecondFieldModel
 */
 
 struct ExpSensorImpl
-    : public ukf::core::SensorModel<4, sensor_accel_t, StandardFieldImpl> {
+    : public ukf::core::Sensor<4, sensor_accel_t, StandardFieldImpl> {
   Eigen::Vector<float, 4> predict(
       const StandardFieldImpl &field) const override {
     (void)field;

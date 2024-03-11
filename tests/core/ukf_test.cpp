@@ -10,9 +10,6 @@
 namespace {
 namespace statetest {
 
-struct MockFieldModel;
-struct MockFieldModelSize5;
-
 struct MockField : public ukf::core::SimpleField<3> {
   using ukf::core::SimpleField<3>::SimpleField;
   Eigen::Matrix<float, 3UL, 3UL> noising() const override {
@@ -46,8 +43,8 @@ struct MockDataSize2 {
 };
 
 struct SensorSize2
-    : public ukf::core::SensorModel<2, MockDataSize2, statetest::MockField> {
-  using SensorModel::SensorModel;
+    : public ukf::core::Sensor<2, MockDataSize2, statetest::MockField> {
+  using Sensor::Sensor;
   Eigen::Matrix<float, 2UL, 2UL> noising() const override {
     return Eigen::DiagonalMatrix<float, 2>(2, 2).toDenseMatrix();
   }
@@ -69,9 +66,9 @@ struct MockDataSize4 {
   float value_4{};
 };
 
-struct SensorSize4 : public ukf::core::SensorModel<4, MockDataSize4,
-                                                   statetest::MockFieldSize5> {
-  using SensorModel::SensorModel;
+struct SensorSize4
+    : public ukf::core::Sensor<4, MockDataSize4, statetest::MockFieldSize5> {
+  using Sensor::Sensor;
   Eigen::Matrix<float, 4UL, 4UL> noising() const override {
     return Eigen::DiagonalMatrix<float, 4>(4, 4, 4, 4).toDenseMatrix();
   }

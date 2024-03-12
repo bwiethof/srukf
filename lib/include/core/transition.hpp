@@ -87,14 +87,15 @@ class Performer {
                          std::forward<Input>(input)...);
   }
 
-  template <std::size_t N, typename... Args1, typename... Deps,
-            typename... Args2>
-  auto withExpandArgs(float dt, const HasModel<N, Args1..., Args2...> &field,
-                      const HasDependencies<Args1...> &,
-                      const HasInputs<Deps...> &, Args2 &&...args2) {
-    return field.timeUpdate(
-        dt, _state.template get<Args1>()...,
-        std::get<Deps>(std::tuple<Args2...>(std::forward<Args2>(args2)...))...);
+  template <std::size_t N, typename... Dependencies,
+            typename... InputDependencies, typename... Inputs>
+  auto withExpandArgs(
+      float dt, const HasModel<N, Dependencies..., InputDependencies...> &field,
+      const HasDependencies<Dependencies...> &,
+      const HasInputs<InputDependencies...> &, Inputs &&...args2) {
+    return field.timeUpdate(dt, _state.template get<Dependencies>()...,
+                            std::get<InputDependencies>(std::tuple<Inputs...>(
+                                std::forward<Inputs>(args2)...))...);
   }
 
   State _state{};

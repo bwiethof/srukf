@@ -140,11 +140,15 @@ int main() {
 */
   ukf::core::State<ukf::core::StateFields<StandardFieldImpl, NoOpField>> Xcore;
   Xcore << 0.1f, 0.2f, 0.3f, 0.4f, 1.1f;
+  ukf::core::SensorData<ukf::core::StaticFields<>> sensor_data;
 
   // sensorData.h(Xcore);
   // slamSensor.h(X);
 
+  NoOpField noOp;
+
   ukf::core::Ukf<ukf::core::StateFields<NoOpField, StandardFieldImpl>> ukf;
+  ukf.step(sensor_data, 0.1f, 4, 1.f);
   /* ukf::slam::Ukf<ukf::core::StateFields<NoOpField>,
                   ukf::slam::MapFields<SlamFieldImpl>>
        slamUkf{};

@@ -94,6 +94,11 @@ class State<ukf::core::StateFields<State_Fields...>> : public Eigen::VectorXf {
     return _stateFields.apply(*this, dt);
   }
 
+  template <typename... Inputs>
+  Eigen::VectorXf f(float dt, Inputs &&...inputs) {
+    return _stateFields.apply(*this, dt, std::forward<Inputs>(inputs)...);
+  }
+
   template <class Field>
   Field get() const {
     Field field = _stateFields.template getField<Field>();

@@ -53,7 +53,7 @@ class Ukf {
     State &X_new = newState.first;
     Covariance &P_new = newState.second;
     _parameters.update(X.rows());
-    newState = predict(X, P, dt, std::forward<Inputs>(inputs)...);
+    newState = predict(X, P, dt, inputs... /*std::forward<Inputs>(inputs)...*/);
     if (sensorData.size() == 0) {
       return newState;
     }
@@ -76,9 +76,9 @@ class Ukf {
         SigmaPoints::Zero(sigmaPoints.rows(), sigmaPoints.cols());
 
     // propagate (f)
-    math::propagate(sigmaPoints, transformedSigmaPoints, [dt](const auto &s) {
+    math::propagate(sigmaPoints, transformedSigmaPoints, [=](const auto &s) {
       // constructing state from vector to access the necessary fields
-      return State(s).f(dt);
+      return State(s).f(dt, inputs... /*std::forward<Inputs>(inputs)...*/);
     });
 
     X_new = math::calculateMean(transformedSigmaPoints, _parameters);

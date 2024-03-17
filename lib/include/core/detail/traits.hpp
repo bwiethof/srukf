@@ -13,9 +13,6 @@ struct Pack {};
 
 template <typename T>
 constexpr std::size_t FieldSize = T::Size;
-
-template <typename T>
-typename T::ModelType Model = T::model;
 };  // namespace detail
 
 template <typename... Dependencies>

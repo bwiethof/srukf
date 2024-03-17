@@ -5,64 +5,61 @@
 #pragma once
 
 #include <cmath>
+
 #include "core/detail/macros.hpp"
 
 namespace ukf {
-    namespace core {
+namespace core {
 
-        class UkfParameters {
+class UkfParameters {
+ public:
+  struct ScalingParameters {
+    double alpha{};
+    double beta{};
+    double kappa{};
+  } __attribute__((aligned(32)));
 
-        public:
+  struct CompositionParameters {
+    double W0_s{};   // Weight for mean value to calculate mean
+    double W0_c{};   // Weight for mean value to calculate covariance
+    double Wi{};     // Weight for i=1,...,L to calculate means and covariance
+    double gamma{};  // Scaling parameter to draw sigma points
+  };
 
-            struct ScalingParameters {
-                double alpha{};
-                double beta{};
-                double kappa{};
-            } __attribute__((aligned(32)));
+  explicit UkfParameters(const ScalingParameters& scalingParams)
+      : _scalingParams(scalingParams) {}
 
-            struct CompositionParameters {
-                double W0_s{};  // Weight for mean value to calculate mean
-                double W0_c{};  // Weight for mean value to calculate covariance
-                double Wi{};    // Weight for i=1,...,L to calculate means and covariance
-                double gamma{}; // Scaling parameter to draw sigma points
-            };
+  void update(std::size_t L) {
+    const auto lambda = calculateLambda(L);
+    updateWeights(L, lambda);
+    updateGamma(L, lambda);
+  }
 
+  NO_DISCARD CompositionParameters params() const { return _compositionParams; }
 
-            explicit UkfParameters(const ScalingParameters &scalingParams) : _scalingParams(scalingParams) {}
+ private:
+  NO_DISCARD inline double calculateLambda(std::size_t L) const {
+    return _scalingParams.alpha * _scalingParams.alpha *
+               (L + _scalingParams.kappa) -
+           L;
+  }
 
-            explicit UkfParameters(ScalingParameters &&scalingParams) : _scalingParams(scalingParams) {}
+  void updateGamma(std::size_t L, double lambda) {
+    _compositionParams.gamma = std::sqrt(lambda + static_cast<double>(L));
+  }
 
-            void update(std::size_t L) {
-                const auto lambda = calculateLambda(L);
-                updateWeights(L, lambda);
-                updateGamma(L, lambda);
-            }
+  void updateWeights(std::size_t L, double lambda) {
+    _compositionParams.W0_s = lambda / (static_cast<double>(L) + lambda);
+    _compositionParams.W0_c =
+        _compositionParams.W0_s +
+        (1.0 - _scalingParams.alpha * _scalingParams.alpha +
+         _scalingParams.beta);
+    _compositionParams.Wi = 1.0 / (2.0 * (static_cast<double>(L) + lambda));
+  }
 
-            NO_DISCARD CompositionParameters params() const { return _compositionParams; }
+  ScalingParameters _scalingParams{};
+  CompositionParameters _compositionParams{};
+};
+}  // namespace core
 
-
-        private:
-
-            NO_DISCARD inline double calculateLambda(std::size_t L) const {
-                return _scalingParams.alpha * _scalingParams.alpha * (L + _scalingParams.kappa) - L;
-            }
-
-            void updateGamma(std::size_t L, double lambda) {
-                _compositionParams.gamma = std::sqrt(lambda + static_cast<double>(L));
-            }
-
-            void updateWeights(std::size_t L, double lambda) {
-                _compositionParams.W0_s = lambda / (static_cast<double>(L) + lambda);
-                _compositionParams.W0_c = _compositionParams.W0_s +
-                                          (1.0 - _scalingParams.alpha * _scalingParams.alpha + _scalingParams.beta);
-                _compositionParams.Wi = 1.0 / (2.0 * (static_cast<double>(L) + lambda));
-            }
-
-
-            ScalingParameters _scalingParams{};
-            CompositionParameters _compositionParams{};
-        };
-    } // namespace core
-
-
-} // namespace ukf
+}  // namespace ukf

@@ -16,7 +16,7 @@ namespace core {
 namespace detail {
 
 template <std::size_t Offset = 0, typename Derived>
-constexpr auto compose(Eigen::MatrixBase<Derived> &Q) {
+constexpr auto compose(Eigen::MatrixBase<Derived> &) {
   // nothing to do here since nothing to set
 }
 
@@ -89,7 +89,6 @@ class State<ukf::core::StateFields<State_Fields...>> : public Eigen::VectorXf {
   // endregion Eigen related constructors and operators
 
   // performs timeupdate for given time interval
-  // template <typename... Inputs> TODO incorporate inputs
   virtual Eigen::VectorXf f(float dt) const {
     return _stateFields.apply(*this, dt);
   }

@@ -47,5 +47,5 @@ jobs:
         run: pip install gcovr && mkdir coverage
 
       - name: Collect coverage
-        run: gcovr -r ..
+        run: gcovr -r --sonarqube .. > ${{github.workspace}}/coverage.xml
         working-directory: ${{github.workspace}}/build/

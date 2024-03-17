@@ -29,10 +29,9 @@ class Ukf {
  public:
   virtual ~Ukf() = default;
 
-  explicit Ukf(UkfParameters &&parameters) : _parameters(parameters) {}
+  explicit Ukf(UkfParameters parameters) : _parameters(parameters) {}
 
-  explicit Ukf(UkfParameters::ScalingParameters &&params)
-      : _parameters(params) {}
+  explicit Ukf(UkfParameters::ScalingParameters params) : _parameters(params) {}
 
   Ukf() : _parameters({1e-3, 2, 0}) {}
 
@@ -123,7 +122,7 @@ class Ukf {
             .transpose();
 
     const Eigen::MatrixXf U = K * S_zz;
-    Eigen::MatrixXf covarianceMatrix = P;
+    Eigen::MatrixXf covarianceMatrix = P.matrix();
 
     // Perform rank Update for each column in U
     // Eigen::LLT<Eigen::MatrixXf> ltt(covarianceMatrix);

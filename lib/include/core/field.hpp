@@ -80,6 +80,14 @@ struct StateFields {
       detail::generation::calculateStaticSize<Fields...>();
   using StateVectorType = Eigen::Vector<float, StateSize>;
 
+  StateFields() noexcept = default;
+
+  StateFields(const StateFields &) noexcept = default;
+  StateFields &operator=(const StateFields &) noexcept = default;
+
+  StateFields(StateFields &&) noexcept = default;
+  StateFields &operator=(StateFields &&) noexcept = default;
+
   template <typename Field>
   Field getField() const {
     return std::get<Field>(_fields);

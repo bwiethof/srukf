@@ -19,17 +19,16 @@ struct Sensor : SimpleField<N, Inputs...> {
   using SimpleField<N, Inputs...>::SimpleField;
 
   // timeUpdate in Sensor only uses current State. Therefore, dt is not needed
-  virtual Eigen::Vector<float, N> timeUpdate(
-      float, const Inputs &...input) const final {
+  state::FieldData<N> timeUpdate(float, const Inputs &...input) const final {
     return predict(input...);
   }
 
-  virtual Eigen::Vector<float, N> toVector(Data &&data) const = 0;
+  virtual Vector<N> toVector(Data &&data) const = 0;
 
   using DataType = Data;
 
  private:
-  virtual Eigen::Vector<float, N> predict(const Inputs &...inputs) const = 0;
+  virtual state::FieldData<N> predict(const Inputs &...inputs) const = 0;
 };
 }  // namespace core
 }  // namespace ukf

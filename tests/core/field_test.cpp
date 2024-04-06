@@ -9,28 +9,25 @@
 #include "core/state.hpp"
 
 namespace {
+using ukf::core::state::FieldData;
+using ukf::core::state::FieldNoising;
 
 struct MockFieldImpl1
     : public ukf::core::Field<3, ukf::core::StateDependencies<>,
                               ukf::core::Inputs<>> {
   using Field::Field;
-  Eigen::Matrix<float, 3UL, 3UL> noising() const override { return {}; }
+  Noising noising() const override { return {}; }
 
-  Eigen::Vector<float, 3UL> timeUpdate(float dt) const override {
-    return Eigen::Vector3f::Constant(dt);
-  }
+  Data timeUpdate(float dt) const override { return Data::Constant(dt); }
 };
 
 struct MockFieldImpl2
     : public ukf::core::Field<2, ukf::core::StateDependencies<MockFieldImpl1>,
                               ukf::core::Inputs<>> {
   using Field::Field;
-  Eigen::Matrix<float, 2UL, 2UL> noising() const override {
-    return Eigen::Matrix2f::Identity();
-  }
+  Noising noising() const override { return Noising::Identity(); }
 
-  Eigen::Vector<float, 2UL> timeUpdate(
-      float, const MockFieldImpl1 &field) const override {
+  Data timeUpdate(float, const MockFieldImpl1 &field) const override {
     return {field.data[0], field.data[1]};
   }
 };
@@ -113,14 +110,15 @@ TEST(StateFields, construction) {
 }
 
 TEST(StateFields, apply) {
+  using namespace ukf::core;
   using StateFieldsTestImpl =
       ukf::core::StateFields<MockFieldImpl1, MockFieldImpl2>;
   using StateType = ukf::core::State<StateFieldsTestImpl>;
   StateFieldsTestImpl fields{};
 
-  const StateType X((Eigen::VectorXf(5) << 1, 2, 3, 4, 5).finished());
+  const StateType X((Vector<DynamicSize>(5) << 1, 2, 3, 4, 5).finished());
 
-  const Eigen::Vector<float, 5> expected(1, 1, 1, 1, 2);
+  const Vector<5> expected(1, 1, 1, 1, 2);
 
   const auto result = fields.apply(X, 1.0);
 

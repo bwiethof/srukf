@@ -13,13 +13,13 @@ struct MockDataSize2 {
 
 struct SensorSize2 : public ukf::core::Sensor<2, MockDataSize2> {
   using Sensor::Sensor;
-  Eigen::Matrix<float, 2UL, 2UL> noising() const override {
-    return Eigen::DiagonalMatrix<float, 2>(2, 2).toDenseMatrix();
+  Noising noising() const override {
+    return (ukf::core::SquaredMatrix<2>() << 2, 0, 0, 2).finished();
   }
 
-  Eigen::Vector<float, 2UL> predict() const override { return {}; }
+  Data predict() const override { return {}; }
 
-  Eigen::Vector<float, 2UL> toVector(MockDataSize2 &&data) const override {
+  ukf::core::Vector<2UL> toVector(MockDataSize2 &&data) const override {
     return {data.value_1, data.value_2};
   }
 };
@@ -33,13 +33,16 @@ struct MockDataSize4 {
 
 struct SensorSize4 : public ukf::core::Sensor<4, MockDataSize4> {
   using Sensor::Sensor;
-  Eigen::Matrix<float, 4UL, 4UL> noising() const override {
-    return Eigen::DiagonalMatrix<float, 4>(4, 4, 4, 4).toDenseMatrix();
+  Noising noising() const override {
+    return (ukf::core::SquaredMatrix<4>().diagonal() << 4.0, 4.0, 4.0, 4.0)
+        .finished()
+        .asDiagonal()
+        .toDenseMatrix();
   }
 
-  Eigen::Vector<float, 4UL> predict() const override { return {}; }
+  Data predict() const override { return {}; }
 
-  Eigen::Vector<float, 4UL> toVector(MockDataSize4 &&data) const override {
+  ukf::core::Vector<4UL> toVector(MockDataSize4 &&data) const override {
     return {data.value_1, data.value_2, data.value_3, data.value_4};
   }
 };
@@ -49,6 +52,7 @@ using SensorDataType =
 }  // namespace
 
 TEST(SensorData, constructionTest) {
+  using namespace ukf::core;
   SensorDataType sensorData{};
 
   ASSERT_EQ(sensorData.vector().size(), 0);
@@ -56,9 +60,9 @@ TEST(SensorData, constructionTest) {
   sensorData.setMeasurement<SensorSize2>({.value_1 = 1.1f, .value_2 = 1.2f});
   // only contains first sensor
   {
-    const Eigen::Vector2f expectedVector(1.1f, 1.2f);
-    const Eigen::Matrix2f expectedMatrix =
-        (Eigen::Matrix2f() << 2.0, 0, 0, 2.0).finished();
+    const ukf::core::Vector<2> expectedVector(1.1f, 1.2f);
+    const ukf::core::SquaredMatrix<2> expectedMatrix =
+        (ukf::core::SquaredMatrix<2>() << 2.0, 0, 0, 2.0).finished();
 
     ASSERT_TRUE(sensorData.vector().isApprox(expectedVector));
     ASSERT_TRUE(sensorData.noising().isApprox(expectedMatrix));
@@ -72,12 +76,12 @@ TEST(SensorData, constructionTest) {
   });
   // Add second measurement shall be reflected
   {
-    const Eigen::Vector<float, 6> expected(1.1f, 1.2f, 2.1f, 2.2f, 2.3f, 2.4f);
-    const Eigen::Matrix<float, 6, 6> expectedMatrix =
-        (Eigen::Matrix<float, 6, 6>() << 2.0, 0, 0, 0, 0, 0, 0, 2.0, 0, 0, 0, 0,
-         0, 0, 4.0, 0, 0, 0, 0, 0, 0, 4.0, 0, 0, 0, 0, 0, 0, 4.0, 0, 0, 0, 0, 0,
-         0, 4.0)
-            .finished();
+    const Vector<6> expected(1.1f, 1.2f, 2.1f, 2.2f, 2.3f, 2.4f);
+    const SquaredMatrix<6> expectedMatrix =
+        (SquaredMatrix<6>().diagonal() << 2.0, 2.0, 4.0, 4.0, 4.0, 4.0)
+            .finished()
+            .asDiagonal()
+            .toDenseMatrix();
 
     ASSERT_TRUE(sensorData.vector().isApprox(expected));
     ASSERT_TRUE(sensorData.noising().isApprox(expectedMatrix));
@@ -86,11 +90,11 @@ TEST(SensorData, constructionTest) {
   sensorData.setMeasurement<SensorSize2>({.value_1 = 3.1f, .value_2 = 3.2f});
   // New measurement shall overwrite the previous one
   {
-    const Eigen::Vector<float, 6> expected(3.1f, 3.2f, 2.1f, 2.2f, 2.3f, 2.4f);
-    const Eigen::Matrix<float, 6, 6> expectedMatrix =
-        (Eigen::Matrix<float, 6, 6>() << 2.0, 0, 0, 0, 0, 0, 0, 2.0, 0, 0, 0, 0,
-         0, 0, 4.0, 0, 0, 0, 0, 0, 0, 4.0, 0, 0, 0, 0, 0, 0, 4.0, 0, 0, 0, 0, 0,
-         0, 4.0)
+    const Vector<6> expected(3.1f, 3.2f, 2.1f, 2.2f, 2.3f, 2.4f);
+    const SquaredMatrix<6> expectedMatrix =
+        (SquaredMatrix<6>() << 2.0, 0, 0, 0, 0, 0, 0, 2.0, 0, 0, 0, 0, 0, 0,
+         4.0, 0, 0, 0, 0, 0, 0, 4.0, 0, 0, 0, 0, 0, 0, 4.0, 0, 0, 0, 0, 0, 0,
+         4.0)
             .finished();
 
     ASSERT_TRUE(sensorData.vector().isApprox(expected));

@@ -5,10 +5,8 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <ostream>
 
 #include "field.hpp"
-#include "slam/field.h"
 
 namespace ukf {
 namespace core {
@@ -35,8 +33,9 @@ auto compose(Eigen::MatrixBase<Derived> &Q, const T &field,
 
 template <typename... StateFields>
 auto constructNoising() {
-  const ukf::core::StateFields<StateFields...> fields;
-  Eigen::MatrixXf Q = Eigen::MatrixXf::Zero(fields.StateSize, fields.StateSize);
+  const core::StateFields<StateFields...> fields;
+  SquaredMatrix<DynamicSize> Q =
+      SquaredMatrix<DynamicSize>::Zero(fields.StateSize, fields.StateSize);
   compose(Q, fields.template getField<StateFields>()...);
   return Q;
 }
@@ -46,15 +45,17 @@ template <typename Fields, int SIZE = 0>
 class State;
 
 template <typename... State_Fields>
-class State<ukf::core::StateFields<State_Fields...>> : public Eigen::VectorXf {
+class State<StateFields<State_Fields...>> : public state::StateBase {
+  using Base = state::StateBase;
+
  public:
   virtual ~State() = default;
 
   // region constructors and assignments
   //  Constructs the state with initial values to zero
   State()
-      : Eigen::VectorXf(
-            ukf::core::StateFields<State_Fields...>::StateVectorType::Zero()) {}
+      : state::StateBase(
+            StateFields<State_Fields...>::StateVectorType::Zero()) {}
 
   State(State &&other) noexcept = default;
 
@@ -68,33 +69,34 @@ class State<ukf::core::StateFields<State_Fields...>> : public Eigen::VectorXf {
 
   // region Eigen related constructors and operators
   template <typename OtherDerived>
-  State(const Eigen::EigenBase<OtherDerived> &other) : Eigen::VectorXf(other) {}
+  State(const Eigen::EigenBase<OtherDerived> &other)
+      : Vector<DynamicSize>(other) {}
 
   template <typename OtherDerived>
   State(Eigen::EigenBase<OtherDerived> &&other)
-      : Eigen::VectorXf(std::move(other)) {}
+      : state::StateBase(std::move(other)) {}
 
   template <typename OtherDerived>
   State &operator=(const Eigen::EigenBase<OtherDerived> &other) {
-    this->Eigen::VectorXf::operator=(other);
+    this->Base::operator=(other);
     return *this;
   }
 
   template <typename OtherDerived>
   State &operator=(Eigen::EigenBase<OtherDerived> &&other) {
-    this->Eigen::VectorXf::operator=(std::move(other));
+    this->Base::operator=(std::move(other));
     return *this;
   }
 
   // endregion Eigen related constructors and operators
 
   // performs timeupdate for given time interval
-  virtual Eigen::VectorXf f(float dt) const {
+  virtual state::StateBase f(float dt) const {
     return _stateFields.apply(*this, dt);
   }
 
   template <typename... Inputs>
-  Eigen::VectorXf f(float dt, Inputs &&...inputs) {
+  state::StateBase f(float dt, Inputs &&...inputs) {
     return _stateFields.apply(*this, dt, std::forward<Inputs>(inputs)...);
   }
 
@@ -105,18 +107,18 @@ class State<ukf::core::StateFields<State_Fields...>> : public Eigen::VectorXf {
     return field;
   }
 
-  Eigen::MatrixXf noising() const { return _systemNoise; }
+  state::NoisingType noising() const { return _systemNoise; }
 
  private:
   template <typename Field>
-  Eigen::Vector<float, Field::Size> fieldData() const {
-    return segment<detail::FieldSize<Field>>(
+  Vector<Field::Size> fieldData() const {
+    return Base::segment<detail::FieldSize<Field>>(
         _stateFields.template getField<Field>().offset);
   }
 
   // manages fields including position and transition
-  ukf::core::StateFields<State_Fields...> _stateFields{};
-  Eigen::MatrixXf _systemNoise = detail::constructNoising<
+  StateFields<State_Fields...> _stateFields{};
+  state::NoisingType _systemNoise = detail::constructNoising<
       State_Fields...>();  // should be constant -> external maybe better and
                            // doing a compile time check?
 };

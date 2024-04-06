@@ -20,7 +20,7 @@ template <typename... Fields>
 struct StaticFields {
   static constexpr std::size_t StateSize =
       detail::generation::calculateStaticSize<Fields...>();
-  using StateVectorType = Eigen::Vector<float, StateSize>;
+  using StateVectorType = Vector<StateSize>;
 
   template <typename Field>
   Field get() const {
@@ -33,7 +33,8 @@ struct StaticFields {
   }
 
   template <typename State>
-  Eigen::VectorXf apply(const State &state, std::size_t measurementSize) const {
+  ukf::core::state::MeasurementType apply(const State &state,
+                                          std::size_t measurementSize) const {
     transition::Performer<State> performer{state};
     return performer.perform(-1, _fields).template segment(0, measurementSize);
   }
@@ -49,8 +50,10 @@ class SensorData;
 template <typename... State_Fields>
 class SensorData<StaticFields<State_Fields...>> {
  public:
+  virtual ~SensorData() = default;
+
   template <typename State>
-  Eigen::VectorXf h(const State &X) const {
+  state::MeasurementType h(const State &X) const {
     return _stateFields.apply(X, _measurement.rows());
   }
 
@@ -66,11 +69,11 @@ class SensorData<StaticFields<State_Fields...>> {
     _stateFields.template updateOffset<Field>(offset);
   }
 
-  virtual Eigen::MatrixXf noising() const { return _noising; }
+  virtual state::NoisingType noising() const { return _noising; }
 
   virtual std::size_t size() const { return _measurement.rows(); }
 
-  virtual Eigen::VectorXf vector() const { return _measurement; }
+  virtual state::MeasurementType vector() const { return _measurement; }
 
  private:
   template <typename Field, typename Data>
@@ -86,8 +89,8 @@ class SensorData<StaticFields<State_Fields...>> {
     const auto offset = _measurement.size();
     const auto newSize = offset + Field::Size;
 
-    const Eigen::MatrixXf zeroMatrix =
-        Eigen::MatrixXf::Zero(newSize, Field::Size);
+    const Matrix<DynamicSize, DynamicSize> zeroMatrix =
+        Matrix<DynamicSize, DynamicSize>::Zero(newSize, Field::Size);
     _noising.conservativeResize(newSize, newSize);
 
     _noising.block(0, offset, newSize, Field::Size) = zeroMatrix;
@@ -98,8 +101,8 @@ class SensorData<StaticFields<State_Fields...>> {
     return offset;
   }
 
-  Eigen::VectorXf _measurement{};
-  Eigen::MatrixXf _noising{};
+  state::MeasurementType _measurement{};
+  state::NoisingType _noising{};
 
   StaticFields<State_Fields...> _stateFields{};
 

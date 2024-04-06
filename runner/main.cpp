@@ -8,120 +8,101 @@
 // Sample to test impl
 // Example Data
 
-namespace test {
+namespace logging {
 
-template <typename... Input>
-struct HasInputs {
-  using inputs = ukf::core::Inputs<Input...>;
-  const HasInputs &GetInputs() const { return *this; }
+enum class LogLevel { Debug, Info, Warning, Error };
+class BaseLogger {
+ public:
+  virtual ~BaseLogger() = default;
+  virtual std::ostream& info() = 0;
+
+  bool isEnabled(LogLevel level) { return _currentLevel >= level; }
+  //  virtual std::ostream& debug() = 0;
+  //  virtual std::ostream& warn() = 0;
+  //  virtual std::ostream& error() = 0;
+ private:
+  LogLevel _currentLevel{};
 };
 
-template <typename... Deps>
-struct HasDependencies {
-  using depsType = ukf::core::StateDependencies<Deps...>;
-  const HasDependencies &GetDependencies() const { return *this; }
+class Logger : public BaseLogger {
+ public:
+  std::ostream& info() override { return std::cout << "[INFO] [<timestamp>] "; }
 };
 
-template <std::size_t N, typename... Inputs>
-struct HasModel {
-  virtual ~HasModel() = default;
+std::unique_ptr<BaseLogger> currentLogger = std::unique_ptr<Logger>();
 
-  virtual Eigen::Matrix<float, N, N> noising() const = 0;
-  virtual Eigen::Vector<float, N> timeUpdate(float,
-                                             const Inputs &...) const = 0;
-};
-
-template <std::size_t N>
-struct HasData {
-  virtual ~HasData() = default;
-  static constexpr std::size_t Size = N;
-  // Offset to be used to track position in vector
-  std::size_t offset{};
-
-  Eigen::Vector<float, Size> data{};
-
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-};
-
-template <std::size_t N, typename T1, typename T2>
-struct FieldExtension;
-
-template <std::size_t N, typename... Dependencies, typename... Input>
-struct FieldExtension<N, ukf::core::StateDependencies<Dependencies...>,
-                      ukf::core::Inputs<Input...>>
-    : HasData<N>,
-      HasModel<N, Dependencies..., Input...>,
-      HasInputs<Input...>,
-      HasDependencies<Dependencies...> {};
-
-template <std::size_t N, typename... Dependencies>
-using Simple = FieldExtension<N, ukf::core::StateDependencies<Dependencies...>,
-                              ukf::core::Inputs<>>;
-
-template <typename State>
-struct TestPerformer {
-  template <typename FieldType, typename... Input>
-  auto performOnModel(float dt, const FieldType &field, Input &&...input) {
-    return performOnArgs(dt, field, field.GetDependencies(), field.GetInputs(),
-                         std::forward<Input>(input)...);
-  }
-
-  template <std::size_t N, typename... Args1, typename... Deps,
-            typename... Args2>
-  auto performOnArgs(float dt,
-                     const test::HasModel<N, Args1..., Args2...> &field,
-                     const HasDependencies<Args1...> &,
-                     const HasInputs<Deps...> &, Args2 &&...args2) {
-    return field.timeUpdate(
-        dt, _state.template get<Args1>()...,
-        std::get<Deps>(std::tuple<Args2...>(std::forward<Args2>(args2)...))...);
-  }
-
-  template <std::size_t N, typename... Args>
-  static auto performImpl(float dt, HasModel<N, Args...> &&model,
-                          Args &&...args) {
-    return model.timeUpdate(dt, model, args...);
-  }
-
-  State _state;
-};
-
-struct TestState {
-  template <typename T>
-  T get() {
-    return {};
-  }
-};
-
-}  // namespace test
-
-struct TestField
-    : test::FieldExtension<
-          3, ukf::core::StateDependencies<TestField, float, double>,
-          ukf::core::Inputs<int>> {
-  TestField() { data = Eigen::Vector3f(1, 2, 3); }
-
-  Eigen::Matrix<float, 3, 3> noising() const override { return {}; }
-  Eigen::Vector<float, 3> timeUpdate(float, const TestField &, const float &,
-                                     const double &,
-                                     const int &) const override {
-    std::cout << "i'm here" << std::endl;
-    return {};
-  }
-};
-template <std::size_t N, typename... Inputs>
-void doIt(const test::HasModel<N, Inputs...> &hasModel) {
-  hasModel.timeUpdate(1.0f, std::get<Inputs>(std::tuple<Inputs...>())...);
+template <typename T>
+std::ostream& Info(T&& value) {
+  auto& infoStream = currentLogger->info();
+  return infoStream;
 }
 
-/**
- * this should already have everything including data
- */
+std::ostream& Debug();
+
+std::ostream& Warn();
+
+std::ostream& Error();
+
+}  // namespace logging
+
+namespace doublePrecision {
+using SigmaPoints = Eigen::MatrixXd;
+using Mean = Eigen::VectorXd;
+
+template <typename Derived_X, typename Derived_P>
+Eigen::MatrixXd drawSigmaPoints(const Eigen::MatrixBase<Derived_X>& X,
+                                const Eigen::MatrixBase<Derived_P>& P,
+                                const ukf::core::UkfParameters& parameters) {
+  assert(X.rows() == P.rows());
+
+  const auto L = X.size();  // missing sensor data for augmented
+
+  const auto params = parameters.params();
+
+  SigmaPoints sigmaPoints = SigmaPoints::Zero(L, 2 * L + 1);
+
+  sigmaPoints.col(0) = X;
+  for (long i = 0; i < L; ++i) {
+    sigmaPoints.col(i + 1) = X + params.gamma * P.col(i);
+    sigmaPoints.col(i + L + 1) = X - params.gamma * P.col(i);
+  }
+
+  return sigmaPoints;
+}
+
+template <typename Derived>
+Mean calculateMean(const Eigen::MatrixBase<Derived>& sigmaPoints,
+                   const ukf::core::UkfParameters& parameters) {
+  const auto params = parameters.params();
+  return std::accumulate(
+      ++sigmaPoints.colwise().begin(), sigmaPoints.colwise().end(),
+      Eigen::VectorXd(params.W0_s * sigmaPoints.col(0)),
+      [weight = params.Wi](const auto& currentMean, const auto& sigmaPoint) {
+        return currentMean + weight * sigmaPoint;
+      });
+}
+}  // namespace doublePrecision
 
 int main() {
-  test::TestPerformer<test::TestState> p{};
-  doIt(TestField{});
-  p.performOnModel(0.1f, TestField{}, 1);
+  std::tuple<const int&> tp{1};
+  std::get<const int&>(tp);
+
+  ukf::core::UkfParameters params{{1e-3, 2, 0}};
+  params.update(3);
+  // Eigen::Vector3d state{1000.123f, 2000.456f, 3000.789f};
+  Eigen::Vector<double, 3> initialState{4293286, 627853, 4659166};
+  Eigen::Matrix3d cov = Eigen::Matrix3d::Identity() * 3000;
+  // double
+  const auto sigmaPoints =
+      doublePrecision::drawSigmaPoints(initialState, cov, params);
+  const auto mean = doublePrecision::calculateMean(sigmaPoints, params);
+
+  // float
+  const auto mathSigmaPoints =
+      ukf::core::math::drawSigmaPoints(initialState, cov, params);
+  const auto mathMean = ukf::core::math::calculateMean(mathSigmaPoints, params);
+
+  std::cout << "mean" << mean << "\n";
 
   /*
   ukf::slam::SensorData<ukf::core::StaticFields<>,

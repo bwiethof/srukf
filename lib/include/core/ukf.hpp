@@ -82,7 +82,9 @@ class Ukf<ukf::core::StateFields<State_Fields...>> : public detail::Ukf {
   CovarianceType getCovariance() const { return _covariance; }
 
  protected:
-  Eigen::MatrixXf getSystemNoise() const override { return _state.noising(); }
+  state::NoisingType getSystemNoise() const override {
+    return _state.noising();
+  }
 
  private:
   StateType _state{};

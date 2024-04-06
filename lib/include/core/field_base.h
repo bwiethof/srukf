@@ -3,6 +3,8 @@
 #pragma once
 #include <cstddef>
 
+#include "core/typedefs.h"
+
 namespace ukf {
 namespace core {
 
@@ -28,10 +30,11 @@ struct HasModel {
 
   HasModel(HasModel &&) noexcept = default;
   HasModel &operator=(HasModel &&) noexcept = default;
+  using Noising = state::FieldNoising<N>;
+  using Data = state::FieldData<N>;
 
-  virtual Eigen::Matrix<float, N, N> noising() const = 0;
-  virtual Eigen::Vector<float, N> timeUpdate(float,
-                                             const Inputs &...) const = 0;
+  virtual state::FieldNoising<N> noising() const = 0;
+  virtual state::FieldData<N> timeUpdate(float, const Inputs &...) const = 0;
 };
 
 template <std::size_t N>
@@ -51,7 +54,7 @@ struct HasData {
   // Offset to be used to track position in vector
   std::size_t offset{};
 
-  Eigen::Vector<float, Size> data{};
+  state::FieldData<Size> data{};
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };

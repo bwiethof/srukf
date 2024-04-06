@@ -4,12 +4,11 @@
 
 #pragma once
 
-#include <Eigen/Core>
-
 #include "core/detail/traits.hpp"
 #include "core/detail/transform.hpp"
 #include "core/field_base.h"
 #include "core/transition.hpp"
+#include "typedefs.h"
 
 namespace ukf {
 namespace core {
@@ -78,7 +77,7 @@ template <typename... Fields>
 struct StateFields {
   static constexpr std::size_t StateSize =
       detail::generation::calculateStaticSize<Fields...>();
-  using StateVectorType = Eigen::Vector<float, StateSize>;
+  using StateVectorType = Vector<StateSize>;
 
   StateFields() noexcept = default;
 

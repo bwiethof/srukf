@@ -5,6 +5,8 @@
 #include "core/covariance.hpp"
 #include "core/detail/ukf_impl.hpp"
 #include "core/parameters.hpp"
+#include "core/sensor.hpp"
+#include "core/sensor_data.h"
 #include "core/state.hpp"
 
 using ::testing::AtLeast;
@@ -17,18 +19,14 @@ class UKFMock : public ukf::core::detail::Ukf {
 
   using ukf::core::detail::Ukf::timeStep;
 
-  MOCK_METHOD(Eigen::MatrixXf, getSystemNoise, (), (const));
+  MOCK_METHOD(ukf::core::state::NoisingType, getSystemNoise, (), (const));
 };
 
 struct MockField1 : public ukf::core::SimpleField<3> {
   using ukf::core::SimpleField<3>::SimpleField;
-  Eigen::Matrix<float, 3UL, 3UL> noising() const override {
-    return Eigen::Matrix3f::Identity();
-  }
+  Noising noising() const override { return Noising ::Identity(); }
 
-  Eigen::Vector<float, 3UL> timeUpdate(float) const override {
-    return Eigen::Vector3f{1, 2, 3};
-  }
+  Data timeUpdate(float) const override { return Data{1, 2, 3}; }
 };
 
 // TODO: remove FieldSize  by using MockModel Size
@@ -37,21 +35,20 @@ struct DataType {};
 
 struct MockSensor : public ukf::core::Sensor<2, DataType, MockField1> {
   using Sensor::Sensor;
-  Eigen::Matrix<float, 2UL, 2UL> noising() const override {
-    return Eigen::Matrix2f::Identity();
-  }
+  Noising noising() const override { return Noising::Identity(); }
 
-  Eigen::Vector<float, 2UL> toVector(DataType &&) const override {
-    return {3, 3};
-  }
+  Data toVector(DataType &&) const override { return {3, 3}; }
 
-  Eigen::Vector<float, 2UL> predict(const MockField1 &field) const override {
+  ukf::core::Vector<2UL> predict(const MockField1 &field) const override {
     return {field.data[0] + field.data[1], field.data[2]};
   }
 };
 
 // Test prediction part of Ukf.timeStep method
 TEST(UkfTest, TimeStep) {
+  using ukf::core::SquaredMatrix;
+  using ukf::core::Vector;
+  using ukf::core::state::CovarianceBase;
   // Arrange
   // Create an instance of your class
 
@@ -61,13 +58,14 @@ TEST(UkfTest, TimeStep) {
 
   UKFMock myUkf(ukf::core::UkfParameters({1, 0, 0}));
 
-  const Eigen::MatrixXf systemNoising = Eigen::MatrixXf::Identity(3, 3);
+  const ukf::core::state::NoisingType systemNoising =
+      ukf::core::state::NoisingType::Identity(3, 3);
   EXPECT_CALL(myUkf, getSystemNoise())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(systemNoising));
 
-  const CovarianceType P(Eigen::MatrixXf::Identity(3, 3));
-  const StateType X(Eigen::Vector3f(1, 2, 3));
+  const CovarianceType P(CovarianceBase::Identity(3, 3));
+  const StateType X(Vector<3>(1, 2, 3));
 
   {
     const double dt = 1.0;
@@ -78,8 +76,8 @@ TEST(UkfTest, TimeStep) {
         myUkf.timeStep(X, P, dt, sensorData);
 
     // only system noise shall be applied
-    const Eigen::Matrix3f expectedCovariance = Eigen::Matrix3f::Identity();
-    const Eigen::Vector3f expectedState = Eigen::Vector3f{1, 2, 3};
+    const SquaredMatrix<3> expectedCovariance = SquaredMatrix<3>::Identity();
+    const ukf::core::Vector<3> expectedState = ukf::core::Vector<3>{1, 2, 3};
 
     ASSERT_TRUE(resultCovariance.isApprox(expectedCovariance));
     ASSERT_TRUE(resultState.isApprox(expectedState));
@@ -91,11 +89,11 @@ TEST(UkfTest, TimeStep) {
     ukf::core::SensorData<ukf::core::StaticFields<MockSensor>> sensorData;
     sensorData.setMeasurement<MockSensor>(DataType{});
 
-    Eigen::Matrix3f expectedCovariance;
-    expectedCovariance << 0.8164966, 0, 0, -0.408248276, 0.707106769, 0, 0, 0,
-        0.707106888;
+    ukf::core::SquaredMatrix<3> expectedCovariance;
+    expectedCovariance << 0.81649658092772592, 0, 0, -0.40824829046386307,
+        0.70710678118654746, 0, 0, 0, 0.70710678118654746;
 
-    const Eigen::Vector3f expectedState = Eigen::Vector3f{1, 2, 3};
+    const ukf::core::Vector<3> expectedState = ukf::core::Vector<3>{1, 2, 3};
 
     const auto [resultState, resultCovariance] =
         myUkf.timeStep(X, P, dt, sensorData);

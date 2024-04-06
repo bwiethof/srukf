@@ -5,39 +5,46 @@
 #include <Eigen/Core>
 
 #ifndef PRECISION
-#define PRECSION double
+#define PRECISION double
 #endif
 
 namespace ukf {
 namespace core {
 
+using Float_t = PRECISION;
+constexpr int DynamicSize = Eigen::Dynamic;
+
 template <int Size>
-using Vector = Eigen::Vector<PRECSION, Size>;
+using Vector = Eigen::Vector<Float_t, Size>;
 
 template <int Rows, int Cols>
-using Matrix = Eigen::Matrix<PRECSION, Rows, Cols>;
+using Matrix = Eigen::Matrix<Float_t, Rows, Cols>;
 
 template <int Size>
 using SquaredMatrix = Matrix<Size, Size>;
 
+template <std::size_t N>
+using Array = std::array<Float_t, N>;
+
 namespace math {
+using SigmaPoints = Matrix<DynamicSize, DynamicSize>;
+using TransformedSigmaPoints = Matrix<DynamicSize, DynamicSize>;
 
-using SigmaPoints = Matrix<Eigen::Dynamic, Eigen::Dynamic>;
-using TransformedSigmaPoints = Matrix<Eigen::Dynamic, Eigen::Dynamic>;
+using DifferenceMatrix = Matrix<DynamicSize, DynamicSize>;
 
-using DifferenceMatrix = Matrix<Eigen::Dynamic, Eigen::Dynamic>;
+using CrossVariance = Matrix<DynamicSize, DynamicSize>;
 
-using CrossVariance = Matrix<Eigen::Dynamic, Eigen::Dynamic>;
+using KalmanGain = Matrix<DynamicSize, DynamicSize>;
 
-using Mean = Vector<Eigen::Dynamic>;
-using Covariance = SquaredMatrix<Eigen::Dynamic>;
+using Mean = Vector<DynamicSize>;
+using Covariance = SquaredMatrix<DynamicSize>;
 
 }  // namespace math
 
 namespace state {
 
-using StateBase = Vector<Eigen::Dynamic>;
-using CovarianceBase = SquaredMatrix<Eigen::Dynamic, Eigen::Dynamic>;
+using StateBase = Vector<DynamicSize>;
+using CovarianceBase = SquaredMatrix<DynamicSize>;
 
 template <std::size_t N>
 using FieldData = Vector<N>;
@@ -45,8 +52,8 @@ using FieldData = Vector<N>;
 template <std::size_t N>
 using FieldNoising = SquaredMatrix<N>;
 
-using MeasurementType = Vector<Eigen::Dynamic>;
-using NoisingType = SquaredMatrix<Eigen::Dynamic>
+using MeasurementType = Vector<DynamicSize>;
+using NoisingType = SquaredMatrix<DynamicSize>;
 
 }  // namespace state
 

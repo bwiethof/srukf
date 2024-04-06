@@ -10,7 +10,7 @@
 
 #include "core/math/transformations.hpp"
 #include "core/parameters.hpp"
-#include "core/sensor_data.h"
+#include "core/typedefs.h"
 
 namespace ukf {
 namespace core {
@@ -69,10 +69,11 @@ class Ukf {
     auto &P_new = result.second;
 
     // Redraw sigma points to incorporate noising
-    const SigmaPoints sigmaPoints = math::drawSigmaPoints(X, P, _parameters);
+    const math::SigmaPoints sigmaPoints =
+        math::drawSigmaPoints(X, P, _parameters);
 
-    SigmaPoints transformedSigmaPoints =
-        SigmaPoints::Zero(sigmaPoints.rows(), sigmaPoints.cols());
+    math::SigmaPoints transformedSigmaPoints =
+        math::SigmaPoints::Zero(sigmaPoints.rows(), sigmaPoints.cols());
 
     // propagate (f)
     math::propagate(sigmaPoints, transformedSigmaPoints, [=](const auto &s) {
@@ -94,12 +95,14 @@ class Ukf {
     auto &P_new = result.second;
 
     // Redraw sigma points to incorporate noising
-    const SigmaPoints sigmaPoints = math::drawSigmaPoints(X, P, _parameters);
+    const math::SigmaPoints sigmaPoints =
+        math::drawSigmaPoints(X, P, _parameters);
 
     // calculate measurement size: #Sigmapoints with size of sensorData ->
     // sensorDataSize Rows x #Sigmapoints
-    SigmaPoints gammaPoints =
-        SigmaPoints::Zero(sensorData.vector().size(), sigmaPoints.cols());
+    math::TransformedSigmaPoints gammaPoints =
+        math::TransformedSigmaPoints::Zero(sensorData.vector().size(),
+                                           sigmaPoints.cols());
 
     // Propagate for measurement prediction
     math::propagate(sigmaPoints, gammaPoints, [sensorData](const auto &s) {
@@ -107,22 +110,23 @@ class Ukf {
     });
 
     // Calculate expected measurement with error covariance
-    const Mean measurementMean = math::calculateMean(gammaPoints, _parameters);
-    const CovarianceMatrixType S_zz = math::calculateSquareRootCovariance(
+    const math::Mean measurementMean =
+        math::calculateMean(gammaPoints, _parameters);
+    const math::Covariance S_zz = math::calculateSquareRootCovariance(
         gammaPoints, measurementMean, sensorData.noising(), _parameters);
 
-    const Eigen::MatrixXf P_xz = math::calculateCrossVarianceMatrix(
+    const math::CrossVariance P_xz = math::calculateCrossVarianceMatrix(
         sigmaPoints, X, gammaPoints, measurementMean, _parameters);
 
     // Calculate Kalman Gain with K=(P_zz/S_zz^T)/S_zz=(S_zz^T\(S_zz\P_zz^T))^T=
-    const Eigen::MatrixXf K =
+    const math::KalmanGain K =
         S_zz.transpose()
             .fullPivHouseholderQr()
             .solve(S_zz.fullPivHouseholderQr().solve(P_xz.transpose()))
             .transpose();
 
-    const Eigen::MatrixXf U = K * S_zz;
-    Eigen::MatrixXf covarianceMatrix = P.matrix();
+    const Matrix<DynamicSize, DynamicSize> U = K * S_zz;
+    math::Covariance covarianceMatrix = P.matrix();
 
     // Perform rank Update for each column in U
     // Eigen::LLT<Eigen::MatrixXf> ltt(covarianceMatrix);
@@ -138,7 +142,7 @@ class Ukf {
     return result;
   }
 
-  virtual Eigen::MatrixXf getSystemNoise() const = 0;
+  virtual SquaredMatrix<DynamicSize> getSystemNoise() const = 0;
   // endregion non containing ukf
 
   UkfParameters _parameters;

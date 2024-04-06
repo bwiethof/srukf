@@ -86,11 +86,12 @@ CrossVariance calculateCrossVarianceMatrix(
 template <typename DerivedCovariance, typename DerivedUpdateMatrix>
 bool performCholeskyUpdate(Eigen::MatrixBase<DerivedCovariance> &P,
                            const Eigen::MatrixBase<DerivedUpdateMatrix> &U,
-                           float value) {
+                           ukf::core::Float_t value) {
   for (auto const &u : U.colwise()) {
     const auto row =
-        Eigen::internal::llt_inplace<float, Eigen::Lower>::rankUpdate(
-            P.derived(), u, value);
+        Eigen::internal::llt_inplace<ukf::core::Float_t,
+                                     Eigen::Lower>::rankUpdate(P.derived(), u,
+                                                               value);
     if (row >= 0) return false;
   }
   return true;
@@ -121,8 +122,7 @@ Covariance calculateSquareRootCovariance(
   // Transpose since Upper triangular Part of R = L^T
   R_prime.transposeInPlace();
   if (!performCholeskyUpdate(R_prime, sigmaPoints.col(0) - mean, params.W0_c)) {
-    std::cerr << "Error performing rank update"
-              << "\n";
+    std::cerr << "Error performing rank update" << "\n";
   };
 
   return R_prime;

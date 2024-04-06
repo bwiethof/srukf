@@ -4,35 +4,34 @@
 
 #pragma once
 
-#include <Eigen/Core>
 #include <vector>
 
 namespace ukf {
-    namespace core {
-        namespace detail {
+namespace core {
+namespace detail {
 
-            // Implementations for Functors
-            namespace impl {
+// Implementations for Functors
+namespace impl {
 
-                template<typename T>
-                std::size_t calculateSize(const std::vector<T> &s) {
-                    return s.size() * T::Size;
-                }
+template <typename T>
+std::size_t calculateSize(const std::vector<T> &s) {
+  return s.size() * T::Size;
+}
 
-                template<typename T, typename T2, typename ...Args>
-                std::size_t calculateSize(const T &t, const T2 &t2, Args ...args) {
-                    return calculateSize(t) + calculateSize(t2, args...);
-                }
-            }
+template <typename T, typename T2, typename... Args>
+std::size_t calculateSize(const T &t, const T2 &t2, Args... args) {
+  return calculateSize(t) + calculateSize(t2, args...);
+}
+}  // namespace impl
 
-            // Interface to calculate absolute measurement vector size
-            struct SizeFunctor {
-                template<typename ...Args>
-                std::size_t operator()(Args ...args) const {
-                    return impl::calculateSize(args...);
-                }
-            };
+// Interface to calculate absolute measurement vector size
+struct SizeFunctor {
+  template <typename... Args>
+  std::size_t operator()(Args... args) const {
+    return impl::calculateSize(args...);
+  }
+};
 
-        } // detail
-    } // core
-} // ukf
+}  // namespace detail
+}  // namespace core
+}  // namespace ukf

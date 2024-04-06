@@ -7,6 +7,8 @@
 #include <numeric>
 #include <tuple>
 
+#include "core/typedefs.h"
+
 namespace ukf {
 namespace core {
 namespace detail {
@@ -69,11 +71,10 @@ concat(T &&t, T2 &&t2, Ts &&...args) {
 }
 
 template <std::size_t M, std::size_t N>
-std::array<float, N * M> flatten(
-    const std::array<std::array<float, N>, M> &arr) {
-  std::array<float, N * M> result;
+ukf::core::Array<N * M> flatten(const std::array<ukf::core::Array<N>, M> &arr) {
+  ukf::core::Array<N * M> result;
   std::accumulate(arr.begin(), arr.end(), 0,
-                  [&](int offset, const std::array<float, N> &elem) {
+                  [&](int offset, const ukf::core::Array<N> &elem) {
                     std::move(elem.begin(), elem.end(),
                               result.begin() + offset);
                     return offset + N;

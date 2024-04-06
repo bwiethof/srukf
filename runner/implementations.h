@@ -18,22 +18,21 @@ struct sensor_accel_t {
 
 struct NoOpField : ukf::core::SimpleField<1> {
   using ukf::core::SimpleField<1>::SimpleField;
-  Eigen::Vector<float, 1UL> timeUpdate(float) const override { return {}; }
+  Data timeUpdate(float) const override { return {}; }
 
-  Eigen::Matrix<float, 1UL, 1UL> noising() const override { return {}; }
+  Noising noising() const override { return {}; }
 };
 
 struct StandardFieldImpl : public ukf::core::SimpleField<4, NoOpField> {
   using Base = ukf::core::SimpleField<4, NoOpField>;
   StandardFieldImpl() = default;
   explicit StandardFieldImpl(std::size_t offset) : Base(offset) {}
-  Eigen::Vector<float, 4> timeUpdate(float,
-                                     const NoOpField &field) const override {
+  Data timeUpdate(float, const NoOpField &field) const override {
     (void)field;
     return {};
   }
 
-  Eigen::Matrix<float, 4, 4> noising() const override { return {}; }
+  Noising noising() const override { return {}; }
 };
 
 /*struct SecondFieldModel;
@@ -66,17 +65,14 @@ struct SecondFieldModel
 
 struct ExpSensorImpl
     : public ukf::core::Sensor<4, sensor_accel_t, StandardFieldImpl> {
-  Eigen::Vector<float, 4> predict(
-      const StandardFieldImpl &field) const override {
+  ukf::core::Vector<4> predict(const StandardFieldImpl &field) const override {
     (void)field;
     return {};
   }
 
-  Eigen::Vector<float, 4> toVector(sensor_accel_t &&) const override {
-    return {};
-  }
+  ukf::core::Vector<4> toVector(sensor_accel_t &&) const override { return {}; }
 
-  Eigen::Matrix<float, 4, 4> noising() const override { return {}; }
+  Noising noising() const override { return {}; }
 };
 
 /*

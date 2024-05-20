@@ -36,8 +36,13 @@ jobs:
         # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Debug --preset conan-debug -DCMAKE_CXX_FLAGS="--coverage -fno-exceptions" -DCMAKE_C_FLAGS="--coverage -fno-exceptions"
 
-      - name: Build
-        run: cmake --build ${{github.workspace}}/build --config Debug --target SRUKF_Test
+      - name: Install sonar-scanner and build-wrapper
+        uses: SonarSource/sonarcloud-github-c-cpp@v2
+
+      - name: Run build-wrapper
+        run: |
+          ${{github.workspace}}/.sonar/build-wrapper-linux-x86/build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build ${{github.workspace}}/build --config Debug --target SRUKF_Test
+        #  build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build/ --config Release
 
       - name: Run tests
         run: tests/SRUKF_Test
@@ -47,5 +52,14 @@ jobs:
         run: pip install gcovr && mkdir coverage
 
       - name: Collect coverage
-        run: gcovr -r ..
+        run: gcovr -r .. --sonarqube  > ${{github.workspace}}/coverage.xml
         working-directory: ${{github.workspace}}/build/
+
+      - name: Run sonar-scanner
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }} # Put the name of your token here
+        run: |
+          sonar-scanner \
+            --define sonar.cfamily.build-wrapper-output="${{ env.BUILD_WRAPPER_OUT_DIR }}" \
+            --define sonar.coverageReportPaths=coverage.xml

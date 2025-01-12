@@ -39,7 +39,7 @@ struct HasModel {
 
 template <std::size_t N>
 struct HasData {
-  explicit HasData(std::size_t offset) : offset(offset) {}
+  explicit HasData(std::size_t offset_) : offset(offset_) {}
   HasData() = default;
 
   HasData(const HasData &) noexcept = default;

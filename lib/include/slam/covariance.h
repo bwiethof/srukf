@@ -11,7 +11,6 @@
 #include "core/covariance.hpp"
 #include "core/detail/traits.hpp"
 #include "core/detail/transform.hpp"
-#include "tl/optional.hpp"
 
 namespace ukf {
 namespace slam {
@@ -48,12 +47,11 @@ class Covariance<ukf::core::StateFields<State_Fields...>,
 
   template <typename Field,
             typename FieldType = typename std::remove_reference_t<Field>>
-  tl::optional<
-      Eigen::Matrix<ukf::core::Float_t, FieldType::Size, FieldType::Size>>
+  Eigen::Matrix<ukf::core::Float_t, FieldType::Size, FieldType::Size>
   getFieldData(std::size_t id) const {
     const auto field = _mapFields.template get<FieldType>(id);
     if (!field) {
-      return tl::nullopt;
+      return {};
     }
 
     return this->block<FieldType::Size, FieldType::Size>(field->offset,

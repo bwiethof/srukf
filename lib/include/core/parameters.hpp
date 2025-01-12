@@ -17,7 +17,7 @@ class UkfParameters {
     double alpha{};
     double beta{};
     double kappa{};
-  } __attribute__((aligned(32)));
+  };
 
   struct CompositionParameters {
     double W0_s{};   // Weight for mean value to calculate mean

@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <tl/optional.hpp>
 #include <vector>
 
 #include "core/detail/traits.hpp"
@@ -47,11 +46,10 @@ class State<ukf::core::StateFields<State_Fields...>, MapFields<Map_Fields...>>
 
   template <typename Field,
             typename FieldType = typename std::remove_reference_t<Field>>
-  tl::optional<Eigen::Vector<float, FieldType::Size>> getFieldData(
-      std::size_t id) const {
+  Eigen::Vector<float, FieldType::Size> getFieldData(std::size_t id) const {
     const auto field = _mapFields.template get<FieldType>(id);
     if (!field) {
-      return tl::nullopt;
+      return {};
     }
 
     return this->segment<FieldType::Size>(field->offset);

@@ -5,7 +5,6 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <tl/optional.hpp>
 
 #include "core/detail/functor.hpp"
 #include "core/detail/transform.hpp"
@@ -58,7 +57,7 @@ template <typename... Fields>
 class MapFields {
   template <typename Field>
   struct IdMatcher {
-    explicit IdMatcher(std::size_t id) : _id(id){};
+    explicit IdMatcher(std::size_t id) : _id(id) {};
 
     bool operator()(const Field &f) { return f._id == _id; }
 
@@ -67,12 +66,12 @@ class MapFields {
 
  public:
   template <typename Field>
-  tl::optional<Field> get(std::size_t id) const {
+  Field get(std::size_t id) const {
     const std::vector<Field> fields = getFields<Field>();
     const auto it =
         std::find_if(fields.begin(), fields.end(), IdMatcher<Field>{id});
     if (it == fields.end()) {
-      return tl::nullopt;
+      return {};
     }
     return *it;
   }

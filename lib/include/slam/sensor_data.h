@@ -3,102 +3,96 @@
 //
 #pragma once
 
-#include <tuple>
-#include <vector>
-#include <numeric>
-#include <unordered_map>
 #include <Eigen/Core>
 #include <iostream>
-#include "core/detail/transform.hpp"
-#include "core/detail/traits.hpp"
+#include <numeric>
+#include <tuple>
+#include <unordered_map>
+#include <vector>
+
 #include "core/detail/functor.hpp"
+#include "core/detail/traits.hpp"
+#include "core/detail/transform.hpp"
 #include "core/sensor_data.h"
 
-
 namespace ukf {
-    namespace slam {
+namespace slam {
 
+template <typename SingleFields, typename MultiFields>
+class SensorData;
 
-        template<typename SingleFields, typename MultiFields>
-        class SensorData;
+template <typename... SingleFields, typename... MultiFields>
+class SensorData<ukf::core::StaticFields<SingleFields...>,
+                 ukf::slam::MapFields<MultiFields...>>
+    : public ukf::core::SensorData<ukf::core::StaticFields<SingleFields...>> {
+  using Base = ukf::core::SensorData<ukf::core::StaticFields<SingleFields...>>;
 
-        template<typename ...SingleFields, typename ...MultiFields>
-        class SensorData<ukf::core::StaticFields<SingleFields...>, ukf::slam::MapFields<MultiFields...>>
-                : public ukf::core::SensorData<ukf::core::StaticFields<SingleFields...>> {
+ public:
+  using Base::operator=;
 
-            using Base = ukf::core::SensorData<ukf::core::StaticFields<SingleFields...>>;
+  template <typename State>
+  Eigen::VectorXf h(const State &X) const {
+    return _multiFields.apply(X, -1);
+  }
 
-        public:
-            using Base::operator=;
+  template <typename Field, typename FieldData>
+  void addMeasurement(FieldData &&data, std::size_t id) {
+    const auto offset = append<Field>(std::forward<FieldData>(data));
 
-            template<typename State>
-            Eigen::VectorXf h(const State &X) const {
-                // how to make dt optional? It is not used on these fields
-                // How to check for the correct provided fields
-                return _multiFields.apply(X, -1);
-            }
+    _multiFields.template add<Field>(offset, id);
+  }
 
-            template<typename Field, typename FieldData>
-            void addMeasurement(FieldData &&data, std::size_t id) {
+  Eigen::MatrixXf noising() const override {
+    const auto baseNoising = Base::noising();
+    const long baseNoisingSize = baseNoising.rows();
+    const long size = _noising.rows();
 
-                const auto offset = append<Field>(std::forward<FieldData>(data));
+    const auto fullSize = baseNoisingSize + size;
+    Eigen::MatrixXf noising = Eigen::MatrixXf::Zero(fullSize, fullSize);
+    noising.block(0, 0, baseNoisingSize, baseNoisingSize) = baseNoising;
+    noising.block(baseNoisingSize, baseNoisingSize, size, size) = _noising;
+    return noising;
+  }
 
-                _multiFields.template add<Field>(offset, id);
-            }
+  std::size_t size() const override {
+    return Base::size() + _measurement.size();
+  }
 
+  virtual Eigen::VectorXf vector() const override {
+    const Eigen::VectorXf baseMeasurement = Base::vector();
+    Eigen::VectorXf measurement(baseMeasurement.rows() + _measurement.rows());
+    measurement.segment(0, baseMeasurement.rows()) = baseMeasurement;
+    measurement.segment(baseMeasurement.rows(), _measurement.rows()) =
+        _measurement;
 
-            Eigen::MatrixXf noising() const override {
-                const auto baseNoising = Base::noising();
-                const long baseNoisingSize = baseNoising.rows();
-                const long size = _noising.rows();
+    return measurement;
+  }
 
-                const auto fullSize = baseNoisingSize + size;
-                Eigen::MatrixXf noising = Eigen::MatrixXf::Zero(fullSize, fullSize);
-                noising.block(0, 0, baseNoisingSize, baseNoisingSize) = baseNoising;
-                noising.block(baseNoisingSize, baseNoisingSize, size, size) = _noising;
-                return noising;
-            }
+ private:
+  template <typename Field, typename Data>
+  void set(Data &&data, std::size_t offset) {
+    _noising.block<Field::Size, Field::Size>(offset, offset) =
+        Field::model.noising(/*data*/);
+    _measurement.segment<Field::Size>(offset) =
+        Field::model.toState(std::forward<Data>(data));
+  }
 
-            std::size_t size() const override {
-                return Base::size() + _measurement.size();
-            }
+  template <typename Field, typename Data>
+  std::size_t append(Data &&data) {
+    const auto offset = _measurement.size();
+    const auto newSize = offset + Field::Size;
+    _noising.conservativeResize(newSize, newSize);
+    _measurement.conservativeResize(newSize);
 
+    set<Field>(std::forward<Data>(data), offset);
+    return offset;
+  }
 
-            virtual Eigen::VectorXf vector() const override {
-                const Eigen::VectorXf baseMeasurement = Base::vector();
-                Eigen::VectorXf measurement(baseMeasurement.rows() + _measurement.rows());
-                measurement.segment(0, baseMeasurement.rows()) = baseMeasurement;
-                measurement.segment(baseMeasurement.rows(), _measurement.rows()) = _measurement;
+  Eigen::VectorXf _measurement{};
+  Eigen::MatrixXf _noising{};
 
-                return measurement;
-            }
+  ukf::slam::MapFields<MultiFields...> _multiFields{};
+};
 
-
-        private:
-
-            template<typename Field, typename Data>
-            void set(Data &&data, std::size_t offset) {
-                _noising.block<Field::Size, Field::Size>(offset, offset) = Field::model.noising(/*data*/);
-                _measurement.segment<Field::Size>(offset) = Field::model.toState(
-                        std::forward<Data>(data));
-            }
-
-            template<typename Field, typename Data>
-            std::size_t append(Data &&data) {
-                const auto offset = _measurement.size();
-                const auto newSize = offset + Field::Size;
-                _noising.conservativeResize(newSize, newSize);
-                _measurement.conservativeResize(newSize);
-
-                set<Field>(std::forward<Data>(data), offset);
-                return offset;
-            }
-
-            Eigen::VectorXf _measurement{};
-            Eigen::MatrixXf _noising{};
-
-            ukf::slam::MapFields<MultiFields...> _multiFields{};
-        };
-
-    } // slam
-} // ukf
+}  // namespace slam
+}  // namespace ukf

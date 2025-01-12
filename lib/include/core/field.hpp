@@ -59,7 +59,7 @@ struct Field<N, StateDependencies<Dependencies...>, Inputs<Input...>>
       HasModel<N, Dependencies..., Input...>,
       HasInputs<Input...>,
       HasDependencies<Dependencies...> {
-  explicit Field(std::size_t offset) : HasData<N>(offset) {}
+  explicit Field(std::size_t off) : HasData<N>(off) {}
   Field() = default;
 };
 
